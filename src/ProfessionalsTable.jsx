@@ -1,83 +1,69 @@
 import React from "react";
-import "./ClientsTable.css"; // Reuse the same table styles for now
+import "./ProfessionalsTable.css";
 
-function ProfessionalsTable({
-  professionals,
-  onArchiveProfessional,
-  onRestoreProfessional,
-  onToggleView,
-  showArchived,
-  onRowClick
+function ProfessionalsTable({ 
+  professionals, 
+  onArchiveProfessional, 
+  onRestoreProfessional, 
+  onToggleView, 
+  showArchived, 
+  onRowClick 
 }) {
   return (
-    <div className="clients-container">
-      <div className="clients-header">
-        <h2>Professionals {showArchived && "(Archived)"}</h2>
-        <div className="clients-buttons">
-          <button className="secondary-btn" onClick={onToggleView}>
-            {showArchived ? "View Active" : "View Archived"}
+    <div className="professionals-table-container">
+      <div className="table-header">
+        <h2>{showArchived ? "Archived Professionals" : "Active Professionals"}</h2>
+        <div className="table-actions">
+          <button onClick={onToggleView} className="toggle-btn">
+            {showArchived ? "Show Active" : "Show Archived"}
           </button>
         </div>
       </div>
 
-      <table className="clients-table">
+      <table className="professionals-table">
         <thead>
           <tr>
             <th>Name</th>
             <th>Company</th>
-            <th>Phone Number</th>
+            <th>Phone</th>
             <th>Email</th>
             <th>Current Client</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {professionals.length === 0 ? (
-            <tr>
-              <td colSpan="6" className="empty-row">
-                {showArchived
-                  ? "No archived professionals."
-                  : "No active professionals."}
+          {professionals.map((professional, index) => (
+            <tr key={index} onClick={() => onRowClick(professional)} className="clickable-row">
+              <td>{professional.name}</td>
+              <td>{professional.company}</td>
+              <td>{professional.phoneNumber}</td>
+              <td>{professional.email}</td>
+              <td>{professional.currentClient || "None"}</td>
+              <td>
+                {showArchived ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRestoreProfessional(professional);
+                    }}
+                    className="restore-btn"
+                  >
+                    Restore
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onArchiveProfessional(professional);
+                    }}
+                    className="archive-btn"
+                  >
+                    Archive
+                  </button>
+                )}
               </td>
             </tr>
-          ) : (
-            professionals.map((pro, index) => (
-              <tr
-                key={index}
-                className="clickable-row"
-                onClick={() => !showArchived && onRowClick(pro)}
-              >
-                <td>{pro.name}</td>
-                <td>{pro.company}</td>
-                <td>{pro.phoneNumber}</td>
-                <td>{pro.email}</td>
-                <td>{pro.currentClient || "—"}</td>
-                <td>
-                  {!showArchived ? (
-                    <button
-                      className="archive-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchiveProfessional(pro);
-                      }}
-                    >
-                      Archive
-                    </button>
-                  ) : (
-                    <button
-                      className="restore-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRestoreProfessional(pro);
-                      }}
-                    >
-                      Restore
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))
-          )}
+          ))}
         </tbody>
       </table>
     </div>

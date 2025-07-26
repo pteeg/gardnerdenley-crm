@@ -1,87 +1,75 @@
 import React from "react";
 import "./ClientsTable.css";
 
-function ClientsTable({
-  clients,
-  onNewClientClick,
-  onArchiveClient,
-  onRestore,
-  onToggleView,
-  showArchived,
-  onRowClick
+function ClientsTable({ 
+  clients, 
+  onNewClientClick, 
+  onArchiveClient, 
+  onRestore, 
+  onToggleView, 
+  showArchived, 
+  onRowClick 
 }) {
   return (
-    <div className="clients-container">
-      <div className="clients-header">
-        <h2>Clients {showArchived && "(Archived)"}</h2>
-        <div className="clients-buttons">
-          <button className="primary-btn" onClick={onNewClientClick}>
-            + New Client
+    <div className="clients-table-container">
+      <div className="table-header">
+        <h2>{showArchived ? "Archived Clients" : "Active Clients"}</h2>
+        <div className="table-actions">
+          <button onClick={onToggleView} className="toggle-btn">
+            {showArchived ? "Show Active" : "Show Archived"}
           </button>
-          <button className="secondary-btn" onClick={onToggleView}>
-            {showArchived ? "View Active" : "View Archived"}
-          </button>
+          {!showArchived && (
+            <button onClick={onNewClientClick} className="new-client-btn">
+              + New Client
+            </button>
+          )}
         </div>
       </div>
 
       <table className="clients-table">
         <thead>
           <tr>
-            <th>Status</th>
             <th>Name</th>
+            <th>Status</th>
             <th>Brief</th>
             <th>Max Budget</th>
-            <th>Phone Number</th>
-            <th>Action</th>
+            <th>Phone</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {clients.length === 0 ? (
-            <tr>
-              <td colSpan="6" className="empty-row">
-                {showArchived
-                  ? "No archived clients."
-                  : "No active clients. Add one!"}
+          {clients.map((client, index) => (
+            <tr key={index} onClick={() => onRowClick(client)} className="clickable-row">
+              <td>{client.name}</td>
+              <td>{client.status}</td>
+              <td>{client.brief}</td>
+              <td>{client.maxBudget}</td>
+              <td>{client.phoneNumber}</td>
+              <td>
+                {showArchived ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRestore(client);
+                    }}
+                    className="restore-btn"
+                  >
+                    Restore
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onArchiveClient(client);
+                    }}
+                    className="archive-btn"
+                  >
+                    Archive
+                  </button>
+                )}
               </td>
             </tr>
-          ) : (
-            clients.map((client, index) => (
-              <tr 
-                key={index}
-                className="clickable-row"
-                onClick={() => !showArchived && onRowClick(client)}
-                >
-                <td>{client.status}</td>
-                <td>{client.name}</td>
-                <td>{client.brief}</td>
-                <td>{client.maxBudget}</td>
-                <td>{client.phoneNumber}</td>
-                <td>
-                  {!showArchived ? (
-                    <button
-                      className="archive-btn"
-                      onClick={(e) => {
-                        e.stopPropagation(); // ✅ prevent triggering row click
-                        onArchiveClient(client);
-                      }}
-                    >
-                      Archive
-                    </button>
-                  ) : (
-                    <button
-                      className="restore-btn"
-                      onClick={(e) => {
-                        e.stopPropagation(); // ✅ prevent triggering row click
-                        onRestore(client);
-                      }}
-                    >
-                      Restore
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))
-          )}
+          ))}
         </tbody>
       </table>
     </div>

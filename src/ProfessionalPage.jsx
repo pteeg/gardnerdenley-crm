@@ -1,40 +1,41 @@
+
 import React from "react";
 import "./ProfessionalPage.css";
 
 function ProfessionalPage({ professional, onBack }) {
   return (
     <div className="professional-page">
-      <button className="back-btn" onClick={onBack}>
-        ← Back to Professionals
-      </button>
-
-      <h1 className="professional-name">{professional.name}</h1>
-      <p className="professional-info">
-        <strong>Speciality:</strong> {professional.speciality || "—"}
-      </p>
-      <p className="professional-info">
-        <strong>Phone:</strong> {professional.phoneNumber || "—"}
-      </p>
-      <p className="professional-info">
-        <strong>Email:</strong> {professional.email || "—"}
-      </p>
-
-      {/* Currently Engaged Clients */}
-      <div className="professional-section">
-        <h2>Currently Engaged Clients</h2>
-        <ul className="professional-list">
-          <li>Joe Bloggs – Viewing Stage</li>
-          <li>Ricky Gervais – Offer Accepted</li>
-        </ul>
+      <div className="professional-page-header">
+        <button onClick={onBack} className="back-btn">
+          ← Back to Professionals
+        </button>
+        <h1>{professional.name}</h1>
       </div>
-
-      {/* Client History */}
-      <div className="professional-section">
-        <h2>Client History</h2>
-        <ul className="professional-list">
-          <li>Steven Gerrard – Completed (12/05/25)</li>
-          <li>Fernando Torres – Completed (03/02/25)</li>
-        </ul>
+      
+      <div className="professional-details">
+        <div className="detail-section">
+          <h3>Contact Information</h3>
+          <p><strong>Company:</strong> {professional.company}</p>
+          <p><strong>Phone:</strong> {professional.phoneNumber}</p>
+          <p><strong>Email:</strong> {professional.email}</p>
+        </div>
+        
+        <div className="detail-section">
+          <h3>Client Information</h3>
+          <p><strong>Current Client:</strong> {professional.currentClient || "None"}</p>
+          <div>
+            <strong>Client History:</strong>
+            {professional.clientHistory && professional.clientHistory.length > 0 ? (
+              <ul>
+                {professional.clientHistory.map((client, index) => (
+                  <li key={index}>{client}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No previous clients</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
