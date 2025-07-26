@@ -1,0 +1,91 @@
+.clients-container {
+  flex: 1;
+  padding: 2rem;
+}
+
+.clients-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clients-header h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.clients-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.primary-btn {
+  background-color: #555;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #aaa;
+  background: white;
+  cursor: pointer;
+}
+
+.clients-table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+}
+
+.clients-table th {
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 600;
+  background-color: #555;
+  color: white;
+}
+
+.clients-table td {
+  padding: 0.75rem;
+  font-weight: 400;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+}
+
+.empty-row {
+  text-align: center;
+  color: #999;
+  padding: 1rem;
+}
+
+.archive-btn {
+  background-color: #c0392b;
+  color: white;
+  padding: 0.3rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.restore-btn {
+  background-color: #27ae60;
+  color: white;
+  padding: 0.3rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background-color: #f0f0f0;
+}

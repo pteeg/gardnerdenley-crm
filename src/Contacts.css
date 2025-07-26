@@ -1,0 +1,114 @@
+/* --- Main Layout --- */
+.contacts-container {
+  display: flex;
+  height: 100%;
+}
+
+.contacts-sidebar {
+  width: 180px;
+  background-color: #f7f7f7;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-right: 1px solid #ddd;
+}
+
+.sidebar-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  width: 100%;
+  border-radius: 8px;
+  border: none;
+  color: #111;
+  background-color: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.sidebar-btn.active {
+  background-color: #e7f0fa;
+  font-weight: bold;
+}
+
+.contacts-main {
+  flex: 1;
+  padding: 1rem;
+  width: 100%; /* Ensure it stretches full width when sidebar is hidden */
+}
+
+.placeholder-text {
+  color: #666;
+}
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 400px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.cancel-btn {
+  padding: 0.5rem 1rem;
+  background-color: #ccc;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.save-btn {
+  padding: 0.5rem 1rem;
+  background-color: #043161;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}

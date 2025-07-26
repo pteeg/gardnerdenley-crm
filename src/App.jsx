@@ -1,9 +1,12 @@
-import './App.css'
+import React from "react";
+import Contacts from "./Contacts";
 
-export default function App() {
+function App() {
   return (
-    <main>
-      React ⚛️ + Vite ⚡ + Replit
-    </main>
-  )
+    <div>
+      <Contacts />
+    </div>
+  );
 }
+
+export default App;

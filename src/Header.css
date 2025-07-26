@@ -1,0 +1,31 @@
+/* src/Header.css */
+.crm-header {
+  width: 100%;
+  padding: 20px 0;
+  background-color: #f7f7f7;
+  display: flex;
+  justify-content: center;
+}
+
+.crm-nav {
+  display: flex;
+  gap: 20px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border-radius: 999px;
+  background-color: #eeeeee;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.tab:hover {
+  background-color: #e0e0e0;
+}
+
+.tab.active {
+  background-color: #4a4a4a;
+  color: white;
+}
