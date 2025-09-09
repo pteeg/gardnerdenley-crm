@@ -1,0 +1,133 @@
+/* components/SalesProgression/SalesProgression.css */
+
+.sales-progression {
+  padding: 20px;
+}
+
+.sales-table-container {
+  overflow-x: auto;
+}
+
+.sales-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.sales-table th,
+.sales-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.sales-table th {
+  background-color: #f2f2f2;
+  text-align: left;
+}
+
+.sales-table input[type="text"],
+.sales-table input[type="date"] {
+  width: 140px;
+  padding: 4px;
+  font-size: 0.85rem;
+}
+
+.status-toggle {
+  display: inline-flex;
+  min-width: 90px; /* enough space for either Done/Not Done */
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #eee;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.sales-progression-container {
+  overflow-x: auto;
+  overflow-y: visible; /* <- allow vertical overflow */
+  max-width: 100%;
+  position: relative;  /* <- establish positioning context for popups */
+}
+
+.sales-progression-table {
+  border-collapse: collapse;
+  width: max-content;
+}
+
+.sales-progression-table th,
+.sales-progression-table td {
+  padding: 8px 12px;
+  white-space: nowrap;
+  border: 1px solid #ccc;
+}
+
+/* === Currency Input Wrapper === */
+.currency-input {
+  display: flex;
+  align-items: center;
+}
+
+.currency-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 120px;
+}
+
+/* £ symbol INSIDE the box */
+.currency-symbol {
+  position: absolute;
+  left: 10px;
+  color: #555;
+  font-weight: 600;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+/* Input styled cleanly */
+.currency-wrapper input[type="text"] {
+  width: 100%;
+  padding: 6px 10px 6px 22px; /* padding-left makes room for £ */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+/* Remove spinners */
+.currency-wrapper input[type="text"]::-webkit-outer-spin-button,
+.currency-wrapper input[type="text"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.currency-wrapper input[type="text"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.view-completed-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.view-completed-btn:hover {
+  background-color: #0056b3;
+}

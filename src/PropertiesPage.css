@@ -1,0 +1,109 @@
+.properties-container {
+  display: flex;
+  height: 100%;
+  font-family: sans-serif;
+}
+
+.properties-sidebar {
+  width: 220px;
+  padding: 20px;
+  background-color: #f8f8f8;
+  border-right: 1px solid #ddd;
+}
+
+.properties-sidebar h3 {
+  margin-top: 0;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.sidebar-button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background-color: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.sidebar-button:hover {
+  background-color: #e4e4e4;
+}
+
+.sidebar-button.active {
+  background-color: #d0d0d0;
+  font-weight: bold;
+}
+
+.properties-content {
+  flex: 1;
+  padding: 20px;
+}
+
+.properties-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.properties-header h2 {
+  margin: 0;
+}
+
+.properties-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.properties-table th,
+.properties-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.properties-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.archive-button,
+.unarchive-button {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.archive-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.archive-button:hover {
+  background-color: #c82333;
+}
+}
+
+.unarchive-button {
+  background-color: #5bc0de;
+  color: white;
+}
+
+.unarchive-button:hover {
+  background-color: #31b0d5;
+}

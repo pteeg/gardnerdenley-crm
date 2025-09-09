@@ -7,7 +7,8 @@ function ProfessionalsTable({
   onRestoreProfessional, 
   onToggleView, 
   showArchived, 
-  onRowClick 
+  onRowClick, 
+  onAddProfessional
 }) {
   return (
     <div className="professionals-table-container">
@@ -17,6 +18,11 @@ function ProfessionalsTable({
           <button onClick={onToggleView} className="toggle-btn">
             {showArchived ? "Show Active" : "Show Archived"}
           </button>
+          {!showArchived && (
+            <button onClick={onAddProfessional} className="add-btn">
+              + Add Professional
+            </button>
+          )}
         </div>
       </div>
 
@@ -27,7 +33,7 @@ function ProfessionalsTable({
             <th>Company</th>
             <th>Phone</th>
             <th>Email</th>
-            <th>Current Client</th>
+            <th>Type</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -38,7 +44,7 @@ function ProfessionalsTable({
               <td>{professional.company}</td>
               <td>{professional.phoneNumber}</td>
               <td>{professional.email}</td>
-              <td>{professional.currentClient || "None"}</td>
+              <td>{professional.type}</td>
               <td>
                 {showArchived ? (
                   <button

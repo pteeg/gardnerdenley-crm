@@ -1,0 +1,25 @@
+.wonga-report {
+  padding: 2rem;
+}
+
+.wonga-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.wonga-table th,
+.wonga-table td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.wonga-table th {
+  background-color: #043161;
+  color: white;
+}
+
+.wonga-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}

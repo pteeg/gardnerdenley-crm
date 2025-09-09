@@ -1,0 +1,54 @@
+.property-page {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.back-button {
+  margin-bottom: 1rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #043161;
+}
+
+.property-section {
+  margin-bottom: 1.5rem;
+}
+
+.property-section h3 {
+  margin-bottom: 0.5rem;
+  color: #043161;
+}
+
+.property-section ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.property-section li {
+  margin-bottom: 0.25rem;
+}
+
+.property-photos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.property-photo-thumbnail {
+  width: 150px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.file-link {
+  display: inline-block;
+  margin-top: 5px;
+  color: #0077cc;
+  text-decoration: underline;
+}

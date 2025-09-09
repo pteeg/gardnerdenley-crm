@@ -1,0 +1,68 @@
+/* === STATUS TOGGLE BASE === */
+.status-toggle {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 22px;           /* Larger padding for rounded pill look */
+  min-width: 120px;             /* Ensures consistent pill size */
+  border-radius: 999px;         /* Fully rounded pill */
+  font-size: 1rem;              /* Larger text, matches screenshot */
+  font-weight: 600;             /* Bold like your screenshot */
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  border: none;                 /* No border lines around toggles */
+  box-shadow: rgba(0, 0, 0, 0.08) 0 1px 3px; /* Subtle depth */
+}
+
+/* === STATUS VARIANTS === */
+.status-toggle.done {
+  background-color: #b2f6c4;    /* Soft pastel green like screenshot */
+  color: #000;                  /* Black text for contrast */
+}
+
+.status-toggle.not-done {
+  background-color: #eeeeee;    /* Light grey like screenshot */
+  color: #000;                  /* Black text */
+}
+
+.status-toggle.pending {
+  background-color: rgba(0, 187, 255, 0.26); /* #00BBFF at 26% opacity */
+  color: #007a99; /* Darker blue text for readability */
+  border: 1px solid rgba(0, 187, 255, 0.4); /* Slightly stronger border */
+}
+
+/* === INTERACTIONS === */
+.status-toggle:hover {
+  transform: scale(1.03);       /* Subtle hover grow */
+}
+
+.status-toggle:active {
+  transform: scale(0.97);       /* Small click shrink */
+}
+
+/* === DROPDOWN STYLES (unchanged) === */
+.status-popup-portal {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: rgba(0, 0, 0, 0.15) 0 4px 10px;
+  z-index: 9999;
+  width: 120px;
+}
+
+.status-popup-option {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.status-popup-option:hover {
+  background-color: #f0f0f0;
+}

@@ -41,9 +41,13 @@ function ClientsTable({
           {clients.map((client, index) => (
             <tr key={index} onClick={() => onRowClick(client)} className="clickable-row">
               <td>{client.name}</td>
-              <td>{client.status}</td>
+              <td>
+                <span className={`status-badge ${(client.status || "unknown").toLowerCase().replace(/\s/g, '-')}`}>
+                  {client.status || "Unknown"}
+                </span>
+              </td>
               <td>{client.brief}</td>
-              <td>{client.maxBudget}</td>
+              <td>£{Number(client.maxBudget).toLocaleString()}</td>
               <td>{client.phoneNumber}</td>
               <td>
                 {showArchived ? (

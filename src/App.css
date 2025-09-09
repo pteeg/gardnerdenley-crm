@@ -25,7 +25,7 @@
 }
 
 .nav-button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.95rem 1.5rem;
   background-color: transparent;
   color: black;
   font-weight: 500;
@@ -38,12 +38,6 @@
 .nav-button.active {
   background-color: #555;
   color: white;
-}
-
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .profile-pic {
@@ -63,7 +57,44 @@
   color: #666;
 }
 
-.chevron {
-  margin-left: 0.25rem;
+/* Pill container */
+.profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;                 /* spacing between picture and text */
+  padding: 0.5rem 1rem;         /* internal padding */
+  background-color: #f7f7f7;    /* subtle neutral background */
+  border-radius: 999px;         /* fully rounded pill shape */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.profile-pill:hover {
+  background-color: #ececec;
+}
+
+/* Profile picture stays circular */
+.profile-pic {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Text alignment */
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.profile-email {
+  color: #666;
   font-size: 0.8rem;
 }

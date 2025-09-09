@@ -1,0 +1,84 @@
+.professional-chooser {
+  position: relative;
+}
+
+.chooser-btn {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chooser-btn:hover {
+  border-color: #00bbff;
+  color: #00bbff;
+}
+
+.chooser-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.chooser-modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 420px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.professional-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.professional-item {
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.professional-item:hover {
+  background: #f5faff;
+}
+
+.company {
+  font-size: 0.85em;
+  color: #777;
+}
+
+.chooser-modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.add-btn {
+  background-color: #00bbff;
+  color: white;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #ccc;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
