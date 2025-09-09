@@ -19,37 +19,59 @@ const SalesProgression = ({
 
   const completedDeals = data.filter((row) => row.dealComplete);
   const activeDeals = data.filter((row) => !row.dealComplete);
+  
+  // Debug: Log the data structure
+  console.log("SalesProgression data:", data);
+  console.log("Active deals:", activeDeals);
 
   const professionals = initialProfessionals.length
     ? initialProfessionals
     : localProfessionals;
   const setProfessionals = parentSetProfessionals || setLocalProfessionals;
 
-  const handleStatusChange = (rowIndex, field, newValue) => {
-    console.log(`Updating ${field} in row ${rowIndex} to ${newValue}`);
+  const handleStatusChange = async (rowIndex, field, newValue) => {
+    console.log(`handleStatusChange called: field=${field}, rowIndex=${rowIndex}, newValue=${newValue}`);
+    console.log("Current data array:", data);
+    
+    // Use the correct data array based on what's being displayed
+    const currentData = showCompleted ? completedDeals : activeDeals;
+    console.log("Current displayed data:", currentData);
+    console.log("Row at index", rowIndex, ":", currentData[rowIndex]);
 
-    setData((prev) =>
-      prev.map((row, idx) =>
-        idx === rowIndex ? { ...row, [field]: newValue } : row
-      )
-    );
+    const row = currentData[rowIndex];
+    if (row?.id && row.id !== "Not Done") {
+      console.log("Updating Firestore document with ID:", row.id);
+      try {
+        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+        await updateSalesProgressionById(row.id, { [field]: newValue });
+        console.log("SalesProgression: Successfully updated", field, "in row", rowIndex, "to", newValue);
+      } catch (error) {
+        console.error("Error updating sales progression:", error);
+      }
+    } else {
+      console.warn("Cannot update sales progression - no valid document ID. Row ID:", row?.id);
+    }
 
     // Mark property as sold when exchanged = Done
     if (field === "exchanged" && newValue === "Done") {
-      const propertyName = data[rowIndex].address;
-      markPropertyAsSold(propertyName);
+      const propertyName = currentData[rowIndex].address;
+      await markPropertyAsSold(propertyName);
     }
   };
 
-  const handleInputChange = (rowIndex, field, value) => {
-    setData((prev) =>
-      prev.map((row, idx) =>
-        idx === rowIndex ? { ...row, [field]: value } : row
-      )
-    );
+  const handleInputChange = async (rowIndex, field, value) => {
+    // Use the correct data array based on what's being displayed
+    const currentData = showCompleted ? completedDeals : activeDeals;
+    const row = currentData[rowIndex];
+    if (row?.id && row.id !== "Not Done") {
+      const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+      await updateSalesProgressionById(row.id, { [field]: value });
+    } else {
+      console.warn("Cannot update sales progression - no valid document ID");
+    }
   };
 
-  const handleAddProfessional = (rowIndex, newProfessional, field) => {
+  const handleAddProfessional = async (rowIndex, newProfessional, field) => {
     // Ensure the new professional has an ID and default archived state
     const proWithId = {
       ...newProfessional,
@@ -58,10 +80,11 @@ const SalesProgression = ({
     };
 
     // Add to professionals list
-    setProfessionals((prev) => [...prev, proWithId]);
+    const { createProfessional } = await import("../lib/professionalsApi");
+    await createProfessional(proWithId);
 
     // Immediately select the new professional for this row
-    handleInputChange(rowIndex, field, {
+    await handleInputChange(rowIndex, field, {
       id: proWithId.id,
       name: proWithId.name,
     });
@@ -88,7 +111,7 @@ const SalesProgression = ({
               <th>Property Address</th>
               <th>Contract Sent</th>
               <th>Contract Signed</th>
-              <th>ID</th>
+              <th>Client ID Sent</th>
               <th>AML</th>
               <th>Solicitor Recommended</th>
               <th>Solicitor Engaged?</th>
@@ -124,9 +147,10 @@ const SalesProgression = ({
                 <td>
                   <StatusToggle
                     value={row.contractSent}
-                    onChange={(newValue) =>
-                      handleStatusChange(rowIndex, "contractSent", newValue)
-                    }
+                    onChange={(newValue) =>{
+                      handleStatusChange(rowIndex, "contractSent", newValue);
+                      console.log("SalesProgression: Updated contractSent in row", rowIndex, "to", newValue);
+                    }}
                   />
                 </td>
                 <td>
@@ -139,10 +163,12 @@ const SalesProgression = ({
                 </td>
                 <td>
                   <StatusToggle
-                    value={row.id}
-                    onChange={(newValue) =>
-                      handleStatusChange(rowIndex, "id", newValue)
-                    }
+                    value={row.clientIdDocument || row.id || "Not Done"}
+                    onChange={(newValue) => {
+                      console.log("SalesProgression: Updating clientIdDocument from", row.clientIdDocument || row.id, "to", newValue, "for row", rowIndex);
+                      console.log("Row data:", row);
+                      handleStatusChange(rowIndex, "clientIdDocument", newValue);
+                    }}
                   />
                 </td>
                 <td>
@@ -229,7 +255,7 @@ const SalesProgression = ({
                     value={row.surveyorDetails?.id || ""}
                     label={row.surveyorDetails?.name || ""}
                     professionals={professionals}
-                    onSelect={(id, name) => handleInputChange(rowIndex, "urveyorDetails", { id, name })}
+                    onSelect={(id, name) => handleInputChange(rowIndex, "surveyorDetails", { id, name })}
                     onAddProfessional={(newProfessional) =>
                       handleAddProfessional(rowIndex, newProfessional, "surveyorDetails")
                     }

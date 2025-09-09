@@ -11,6 +11,8 @@
 .sales-progression-content {
   flex: 1;
   padding: 20px;
+  max-width: calc(100vw - 240px); /* Full viewport width minus sidebar width */
+  overflow-x: hidden; /* Prevent horizontal overflow at content level */
 }
 
 .sales-table-container {
@@ -64,13 +66,15 @@
 .sales-progression-container {
   overflow-x: auto;
   overflow-y: visible; /* <- allow vertical overflow */
-  max-width: 100%;
+  width: 100%;
+  max-width: calc(100vw - 240px); /* Full viewport width minus sidebar width */
   position: relative;  /* <- establish positioning context for popups */
 }
 
 .sales-progression-table {
   border-collapse: collapse;
   width: max-content;
+  min-width: 100%;
 }
 
 .sales-progression-table th,

@@ -41,12 +41,9 @@
   transform: scale(0.97);       /* Small click shrink */
 }
 
-/* === DROPDOWN STYLES (unchanged) === */
+/* === DROPDOWN STYLES === */
 .status-popup-portal {
-  position: absolute;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -54,6 +51,7 @@
   box-shadow: rgba(0, 0, 0, 0.15) 0 4px 10px;
   z-index: 9999;
   width: 120px;
+  pointer-events: auto;
 }
 
 .status-popup-option {

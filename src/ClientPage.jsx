@@ -32,6 +32,14 @@ function ClientPage({
 
   const linkedProperties = allProperties.filter(p => p.linkedClient === client.name);
   const availableProperties = allProperties.filter(p => !p.linkedClient);
+  
+  // Debug logging
+  console.log("ClientPage Debug:", {
+    clientName: client.name,
+    allProperties: allProperties.length,
+    linkedProperties: linkedProperties.length,
+    linkedProps: linkedProperties.map(p => ({ name: p.name, offerStatus: p.offerStatus, linkedClient: p.linkedClient }))
+  });
 
   useEffect(() => {
     setEditedClient(client);
@@ -57,11 +65,56 @@ function ClientPage({
     setSelectedPropertyName(null);
   };
 
-  const handleOfferAccepted = (propertyName) => {
-    updatePropertyOffer(propertyName, {
+  const handleOfferAccepted = async (propertyName) => {
+    await updatePropertyOffer(propertyName, {
       offerStatus: "Accepted"
     });
-    updateClientStatus(client.name, "Matched");
+    await updateClientStatus(client.name, "Matched");
+
+    // Ensure a sales progression row exists for this accepted offer
+    try {
+      const { createSalesProgression } = await import("./lib/salesProgressionsApi");
+      await createSalesProgression({
+        client: client.name,
+        address: propertyName,
+        contractSent: "Not Done",
+        contractSigned: "Not Done",
+        clientIdDocument: "Not Done",
+        aml: "Not Done",
+        solicitorRecommended: "Not Done",
+        solicitorEngaged: "Not Done",
+        solicitorDetails: "",
+        mortgageAdvisorRecommended: "Not Done",
+        mortgageAdvisorDetails: "",
+        mortgageValBooked: "Not Done",
+        surveyorRecommended: "Not Done",
+        surveyorDetails: "",
+        surveyBooked: "Not Done",
+        sdltAdvisorRecommended: "Not Done",
+        targetExchangeDate: "",
+        targetCompletionDate: "",
+        removalsRecommended: "Not Done",
+        removalsBooked: "Not Done",
+        exchangeDateSet: "",
+        completionDateSet: "",
+        exchanged: "Not Done",
+        invoiceSent: "Not Done",
+        invoicePaid: "Not Done",
+        paymentExpected: "",
+        invoiceAmount: "",
+        dealComplete: false
+      });
+    } catch (e) {
+      console.error("Failed to create sales progression for accepted offer:", e);
+    }
+    
+    // Update the client's properties array to reflect the accepted offer
+    const updatedProperties = (client.properties || []).map(prop => 
+      prop.name === propertyName 
+        ? { ...prop, offerStatus: "Accepted" }
+        : prop
+    );
+    updateClientProperties(client.name, updatedProperties);
   };
 
   const handleOfferDeclined = (propertyName) => {
@@ -69,18 +122,42 @@ function ClientPage({
       offerStatus: "Declined",
       offerAmount: ""
     });
+    
+    // Update the client's properties array to reflect the declined offer
+    const updatedProperties = (client.properties || []).map(prop => 
+      prop.name === propertyName 
+        ? { ...prop, offerStatus: "Declined", offerAmount: "" }
+        : prop
+    );
+    updateClientProperties(client.name, updatedProperties);
   };
 
   const handleAbandon = (propertyName) => {
     updatePropertyOffer(propertyName, {
       offerStatus: "Abandoned"
     });
+    
+    // Update the client's properties array to reflect the abandoned offer
+    const updatedProperties = (client.properties || []).map(prop => 
+      prop.name === propertyName 
+        ? { ...prop, offerStatus: "Abandoned" }
+        : prop
+    );
+    updateClientProperties(client.name, updatedProperties);
   };
 
   const handleUnAbandon = (propertyName) => {
     updatePropertyOffer(propertyName, {
       offerStatus: null
     });
+    
+    // Update the client's properties array to reflect the un-abandoned offer
+    const updatedProperties = (client.properties || []).map(prop => 
+      prop.name === propertyName 
+        ? { ...prop, offerStatus: null }
+        : prop
+    );
+    updateClientProperties(client.name, updatedProperties);
   };
 
   const determineAndUpdateStatus = () => {
@@ -131,6 +208,8 @@ function ClientPage({
     };
 
     updateClientInfo(originalName, cleaned);
+    
+    window.location.reload();
     setShowEditModal(false);
   };
 
@@ -172,7 +251,9 @@ function ClientPage({
 
           {linkedProperties.length === 0 && <p>No properties linked yet.</p>}
 
-          {linkedProperties.map((property) => (
+          {linkedProperties.map((property) => {
+            console.log("Rendering property:", property.name, "offerStatus:", property.offerStatus, "hasOfferStatus:", property.hasOwnProperty('offerStatus'));
+            return (
             <div key={property.name} className="property-offer-card">
               <h4>{property.name}</h4>
               {property.offerStatus === "Awaiting Vendor Response" && (
@@ -202,8 +283,9 @@ function ClientPage({
                   <button onClick={() => handleUnAbandon(property.name)}>Un-abandon</button>
                 </>
               )}
-              {!property.offerStatus && (
+              {(!property.offerStatus || property.offerStatus === null || property.offerStatus === undefined || property.offerStatus === "None") && (
                 <button onClick={() => {
+                  console.log("Log Offer clicked for property:", property.name, "offerStatus:", property.offerStatus);
                   setSelectedPropertyName(property.name);
                   setShowOfferModal(true);
                 }}>Log Offer</button>
@@ -221,7 +303,8 @@ function ClientPage({
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

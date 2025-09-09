@@ -4,37 +4,10 @@ import Sidebar from './Sidebar';
 import NewPropertyModal from './NewPropertyModal';
 import PropertyPage from './PropertyPage';
 
-const PropertiesPage = ({ professionals }) => {
+const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onRestoreProperty, onToggleView, showArchived }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
-
-  const [properties, setProperties] = useState([
-    {
-      id: 1,
-      name: '12 Latham Road',
-      brief: '5-bed detached, large garden',
-      price: '£2,500,000',
-      status: 'On Market',
-      archived: false,
-    },
-    {
-      id: 2,
-      name: '24 Chaucer Road',
-      brief: '4-bed semi-detached, needs renovation',
-      price: '£1,200,000',
-      status: 'On Market',
-      archived: false,
-    },
-    {
-      id: 3,
-      name: '31 Milton Road',
-      brief: '3-bed end terrace, garden flat',
-      price: '£800,000',
-      status: 'Off Market',
-      archived: false,
-    }
-  ]);
 
   const filteredProperties = properties.filter(property => {
     if (selectedFilter === 'archived') return property.archived;
@@ -50,13 +23,9 @@ const PropertiesPage = ({ professionals }) => {
     setSelectedProperty(null); // reset when toggling views
   };
 
-  const handleAddProperty = (newProperty) => {
-    const propertyWithId = {
-      ...newProperty,
-      id: properties.length + 1,
-      archived: false,
-    };
-    setProperties([...properties, propertyWithId]);
+  const handleAddProperty = async (newProperty) => {
+    const { createProperty } = await import('./lib/propertiesApi');
+    await createProperty(newProperty);
     setIsAdding(false);
   };
 
@@ -68,14 +37,9 @@ const PropertiesPage = ({ professionals }) => {
     setSelectedProperty(null);
   };
 
-  const handleToggleArchive = (id) => {
-    setProperties(prev =>
-      prev.map(property =>
-        property.id === id
-          ? { ...property, archived: !property.archived }
-          : property
-      )
-    );
+  const handleToggleArchive = async (id, archived) => {
+    const { toggleArchiveProperty } = await import('./lib/propertiesApi');
+    await toggleArchiveProperty(id, !archived);
   };
 
   return (
@@ -122,7 +86,7 @@ const PropertiesPage = ({ professionals }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent row click
-                          handleToggleArchive(property.id);
+                          handleToggleArchive(property.id, property.archived);
                         }}
                         className={property.archived ? "unarchive-button" : "archive-button"}
                       >

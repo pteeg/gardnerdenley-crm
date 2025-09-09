@@ -9,18 +9,87 @@ const StatusToggle = ({ value, onChange }) => {
 
   const options = ["Done", "Pending", "Not Done"];
 
-  const handleOptionClick = (option) => {
+  const handleOptionClick = (option, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log("StatusToggle: Changing from", value, "to", option);
     onChange(option);
     setIsOpen(false);
   };
 
   useEffect(() => {
     if (isOpen && toggleRef.current) {
-      const rect = toggleRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + window.scrollY + 4, // just below toggle
-        left: rect.left + rect.width / 2, // horizontally centred
-      });
+      const updatePosition = () => {
+        const rect = toggleRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const popupHeight = 120; // Approximate height of popup
+        const popupWidth = 120; // Popup width
+        
+        // Calculate absolute position accounting for scroll
+        const absoluteTop = rect.top + window.scrollY;
+        const absoluteLeft = rect.left + window.scrollX;
+        
+        // Check if popup would go off screen vertically
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        
+        let top, left;
+        
+        if (spaceBelow >= popupHeight || spaceBelow > spaceAbove) {
+          // Position below the button
+          top = absoluteTop + rect.height + 4;
+        } else {
+          // Position above the button
+          top = absoluteTop - popupHeight - 4;
+        }
+        
+        // Center horizontally relative to the button
+        left = absoluteLeft + (rect.width / 2) - (popupWidth / 2);
+        
+        // Ensure it stays within viewport bounds
+        left = Math.max(10, Math.min(left, viewportWidth - popupWidth - 10));
+        
+        setPosition({ top, left });
+      };
+
+      // Update position immediately
+      updatePosition();
+
+      // Update position on scroll
+      const handleScroll = () => updatePosition();
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleScroll);
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleScroll);
+      };
+    }
+  }, [isOpen]);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && toggleRef.current && !toggleRef.current.contains(event.target)) {
+        // Check if the click is on a status popup option
+        const isPopupClick = event.target.closest('.status-popup-portal');
+        if (!isPopupClick) {
+          setIsOpen(false);
+        }
+      }
+    };
+
+    if (isOpen) {
+      // Use a small delay to prevent immediate closing when clicking options
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
   }, [isOpen]);
 
@@ -37,7 +106,7 @@ const StatusToggle = ({ value, onChange }) => {
         }`}
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        {value || "Pending"}
+        {value || "Not Done"}
       </div>
 
       {isOpen &&
@@ -56,7 +125,10 @@ const StatusToggle = ({ value, onChange }) => {
               <div
                 key={option}
                 className="status-popup-option"
-                onClick={() => handleOptionClick(option)}
+                onClick={(event) => {
+                  console.log("StatusToggle: Clicked", option);
+                  handleOptionClick(option, event);
+                }}
               >
                 {option}
               </div>

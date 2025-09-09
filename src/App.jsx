@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { subscribeToClients } from "./lib/clientsApi";
 import "./App.css";
 import gdLogo from "./assets/gd logo new.png";
 import profilePic from "./assets/Me smiling.jpeg";
@@ -6,96 +7,128 @@ import Contacts from "./Contacts";
 import PropertiesPage from "./PropertiesPage";
 import SalesProgression from "./Sales Progression/SalesProgression";
 import WongaReport from "./Wonga Report/WongaReport";
+import { subscribeToProperties } from "./lib/propertiesApi";
+import { subscribeToProfessionals } from "./lib/professionalsApi";
+import { subscribeToSalesProgressions } from "./lib/salesProgressionsApi";
+import { cleanupOldSalesProgressions } from "./lib/cleanupApi";
 
 function App() {
   const [activeTab, setActiveTab] = useState("Contacts");
   const tabs = ["Contacts", "Properties", "Sales Progression", "Wonga Report"];
 
-  // ✅ Properties state
-  const [properties, setProperties] = useState([
-    {
-      name: "12 Latham Road",
-      brief: "5-bed detached, large garden",
-      price: "£2,500,000",
-      status: "On Market",
-      archived: false
-    },
-    {
-      name: "24 Chaucer Road",
-      brief: "4-bed semi-detached, needs renovation",
-      price: "£1,200,000",
-      status: "On Market",
-      archived: false
-    }
-  ]);
-
+  // ✅ Properties state (Firestore-backed)
+  const [properties, setProperties] = useState([]);
   const [showArchivedProperties, setShowArchivedProperties] = useState(false);
 
-  const handleArchiveProperty = (propertyToArchive) => {
-    setProperties(
-      properties.map((p) =>
-        p.name === propertyToArchive.name ? { ...p, archived: true } : p
-      )
-    );
+  useEffect(() => {
+    const unsubscribe = subscribeToProperties({ includeArchived: true }, setProperties);
+    return () => unsubscribe();
+  }, []);
+
+  const handleArchiveProperty = async (propertyToArchive) => {
+    if (propertyToArchive?.id) {
+      const { toggleArchiveProperty } = await import("./lib/propertiesApi");
+      await toggleArchiveProperty(propertyToArchive.id, true);
+    }
   };
 
-  const handleRestoreProperty = (propertyToRestore) => {
-    setProperties(
-      properties.map((p) =>
-        p.name === propertyToRestore.name ? { ...p, archived: false } : p
-      )
-    );
+  const handleRestoreProperty = async (propertyToRestore) => {
+    if (propertyToRestore?.id) {
+      const { toggleArchiveProperty } = await import("./lib/propertiesApi");
+      await toggleArchiveProperty(propertyToRestore.id, false);
+    }
   };
 
   const toggleArchivedPropertiesView = () => {
     setShowArchivedProperties((prev) => !prev);
   };
 
-  // ✅ Professionals state
-  const [professionals, setProfessionals] = useState([
-    // Temporary local seed data
-    {
-      id: "1",
-      name: "John Smith",
-      company: "Smith & Co.",
-      type: "Solicitor",
-      archived: false
-    },
-    {
-      id: "2",
-      name: "Mary Jones",
-      company: "Jones Surveyors",
-      type: "Surveyor",
-      archived: false
-    },
-    {
-      id: "3",
-      name: "Mark Taylor",
-      company: "Taylor Mortgages",
-      type: "MortgageAdvisor",
-      archived: false
-    }
-  ]);
+  // ✅ Professionals state (Firestore-backed)
+  const [professionals, setProfessionals] = useState([]);
+  useEffect(() => {
+    const unsubscribe = subscribeToProfessionals({ includeArchived: true }, setProfessionals);
+    return () => unsubscribe();
+  }, []);
 
-  // ✅ Clients state
+  // ✅ Clients state (Firestore-backed)
   const [clients, setClients] = useState([]);
 
-  const updateClientInfo = (clientName, updatedClientData) => {
-    setClients(prevClients =>
-      prevClients.map(client =>
-        client.name === clientName ? { ...client, ...updatedClientData } : client
-      )
-    );
+  useEffect(() => {
+    const unsubscribe = subscribeToClients({ includeArchived: true }, (list) => {
+      setClients(list);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const updateClientInfo = async (clientName, updatedClientData) => {
+    const client = clients.find(c => c.name === clientName);
+    if (client?.id) {
+      const { updateClientById } = await import("./lib/clientsApi");
+      await updateClientById(client.id, updatedClientData);
+    }
   };
 
-  // ✅ Dummy sales progression data here
-  const [salesProgressions, setSalesProgressions] = useState([
-    {
-      client: "Alex Johnson",
-      address: "13 Latham Road",
+  // ✅ Sales Progressions state (Firestore-backed)
+  const [salesProgressions, setSalesProgressions] = useState([]);
+  useEffect(() => {
+    // Clean up any old invalid data on first load
+    cleanupOldSalesProgressions();
+    
+    const unsubscribe = subscribeToSalesProgressions({ includeCompleted: true }, (data) => {
+      console.log("Raw sales progressions data from Firestore:", data);
+      // Filter out any old data that doesn't have proper Firestore IDs
+      const validData = data.filter(item => {
+        // Keep items that have a valid Firestore document ID (not "Not Done" or empty)
+        const hasValidId = item.id && item.id !== "Not Done" && item.id !== "";
+        console.log("Item:", item, "hasValidId:", hasValidId);
+        return hasValidId;
+      });
+      console.log("Filtered sales progressions data:", validData);
+      setSalesProgressions(validData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const removeSalesProgressionRow = async (propertyName, clientName) => {
+    const progression = salesProgressions.find(row => 
+      row.address === propertyName && row.client === clientName
+    );
+    if (progression?.id) {
+      const { deleteSalesProgressionById } = await import("./lib/salesProgressionsApi");
+      await deleteSalesProgressionById(progression.id);
+    }
+  };
+
+  const markPropertyAsMatched = async (propertyName) => {
+    const property = properties.find(p => p.name === propertyName);
+    if (property?.id) {
+      const { updatePropertyById } = await import("./lib/propertiesApi");
+      await updatePropertyById(property.id, { status: "Matched" });
+    }
+  };
+
+  const handleCancelMatch = async (clientName, propertyName) => {
+    const property = properties.find(p => p.name === propertyName);
+    if (property?.id) {
+      const { updatePropertyById } = await import("./lib/propertiesApi");
+      await updatePropertyById(property.id, { 
+        status: "On Market", 
+        linkedClient: null,
+        offerStatus: "None"
+      });
+    }
+    await removeSalesProgressionRow(propertyName, clientName);
+  };
+
+  const createNewSalesProgression = async (clientName, propertyName) => {
+    console.log("Creating new sales progression for:", clientName, propertyName);
+    const { createSalesProgression } = await import("./lib/salesProgressionsApi");
+    const progression = {
+      client: clientName,
+      address: propertyName,
       contractSent: "Not Done",
       contractSigned: "Not Done",
-      id: "Not Done",
+      clientIdDocument: "Not Done",
       aml: "Not Done",
       solicitorRecommended: "Not Done",
       solicitorEngaged: "Not Done",
@@ -111,69 +144,22 @@ function App() {
       targetCompletionDate: "",
       removalsRecommended: "Not Done",
       removalsBooked: "Not Done",
-      exchangeDateSet: "Not Done",
-      completionDateSet: "Not Done",
+      exchangeDateSet: "",
+      completionDateSet: "",
       exchanged: "Not Done",
       invoiceSent: "Not Done",
       invoicePaid: "Not Done",
       paymentExpected: "",
-      invoiceAmount: ""
+      invoiceAmount: "",
+      dealComplete: false
+    };
+    try {
+      const docId = await createSalesProgression(progression);
+      console.log("Sales progression created with ID:", docId);
+    } catch (error) {
+      console.error("Error creating sales progression:", error);
     }
-  ]);
-
-  const removeSalesProgressionRow = (propertyName, clientName) => {
-    setSalesProgressions(prev =>
-      prev.filter((row) => row.address !== propertyName || row.client !== clientName)
-    );
   };
-
-  const markPropertyAsMatched = (propertyName) => {
-    setProperties(prev =>
-      prev.map(p =>
-        p.name === propertyName ? { ...p, status: "Matched" } : p
-      )
-    );
-  };
-
-  const handleCancelMatch = (clientName, propertyName) => {
-    setProperties(prev =>
-      prev.map(p =>
-        p.name === propertyName ? { ...p, status: "On Market", linkedClient: null } : p
-      )
-    );
-    removeSalesProgressionRow(propertyName, clientName);
-  };
-
-  const createNewSalesProgression = (clientName, propertyName) => ({
-    client: clientName,
-    address: propertyName,
-    contractSent: "Not Done",
-    contractSigned: "Not Done",
-    id: "Not Done",
-    aml: "Not Done",
-    solicitorRecommended: "Not Done",
-    solicitorEngaged: "Not Done",
-    solicitorDetails: "",
-    mortgageAdvisorRecommended: "Not Done",
-    mortgageAdvisorDetails: "",
-    mortgageValBooked: "Not Done",
-    surveyorRecommended: "Not Done",
-    surveyorDetails: "",
-    surveyBooked: "Not Done",
-    sdltAdvisorRecommended: "Not Done",
-    targetExchangeDate: "",
-    targetCompletionDate: "",
-    removalsRecommended: "Not Done",
-    removalsBooked: "Not Done",
-    exchangeDateSet: "",
-    completionDateSet: "",
-    exchanged: "Not Done",
-    invoiceSent: "Not Done",
-    invoicePaid: "Not Done",
-    paymentExpected: "",
-    invoiceAmount: "",
-    dealComplete: false
-  });
 
   return (
     <div>
@@ -211,14 +197,12 @@ function App() {
             properties={properties}
             setProperties={setProperties}
             allProperties={properties}
-            updatePropertyLinkage={(propertyName, clientName) => {
-              setProperties(prev =>
-                prev.map(p =>
-                  p.name === propertyName
-                    ? { ...p, linkedClient: clientName }
-                    : p
-                )
-              );
+            updatePropertyLinkage={async (propertyName, clientName) => {
+              const property = properties.find(p => p.name === propertyName);
+              if (property?.id) {
+                const { updatePropertyById } = await import("./lib/propertiesApi");
+                await updatePropertyById(property.id, { linkedClient: clientName });
+              }
             }}
             setSalesProgressions={setSalesProgressions}
             removeSalesProgressionRow={removeSalesProgressionRow}
@@ -246,15 +230,15 @@ function App() {
         <SalesProgression
           data={salesProgressions}
           setData={setSalesProgressions}
-          markPropertyAsSold={(propertyName) => {
-            setProperties(prev =>
-              prev.map(p =>
-                p.name === propertyName ? { ...p, status: "Sold" } : p
-              )
-            );
+          markPropertyAsSold={async (propertyName) => {
+            const property = properties.find(p => p.name === propertyName);
+            if (property?.id) {
+              const { updatePropertyById } = await import("./lib/propertiesApi");
+              await updatePropertyById(property.id, { status: "Sold" });
+            }
           }}
-          professionals={professionals}                 // ⬅ NEW
-          setProfessionals={setProfessionals}           // ⬅ NEW
+          professionals={professionals}
+          setProfessionals={setProfessionals}
         />
         )}
 

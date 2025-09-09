@@ -7,6 +7,7 @@ import NewProfessionalModal from "./NewProfessionalModal";
 import "./Contacts.css";
 import Sidebar from "./Sidebar";
 import AddClientForm from "./AddClientForm";
+import { createClient } from "./lib/clientsApi";
 
 function Contacts({
   professionals,
@@ -28,162 +29,127 @@ function Contacts({
   const [showArchivedProfessionals, setShowArchivedProfessionals] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
-  const handleArchiveClient = (clientToArchive) => {
-    setClients(
-      clients.map((c) =>
-        c.name === clientToArchive.name ? { ...c, archived: true } : c
-      )
-    );
+  const handleArchiveClient = async (clientToArchive) => {
+    if (clientToArchive.id) {
+      const { archiveClientById } = await import("./lib/clientsApi");
+      await archiveClientById(clientToArchive.id);
+    }
     setSelectedClient(null);
   };
 
-  const handleRestoreClient = (clientToRestore) => {
-    setClients(
-      clients.map((c) =>
-        c.name === clientToRestore.name ? { ...c, archived: false } : c
-      )
-    );
+  const handleRestoreClient = async (clientToRestore) => {
+    if (clientToRestore.id) {
+      const { restoreClientById } = await import("./lib/clientsApi");
+      await restoreClientById(clientToRestore.id);
+    }
     setSelectedClient(null);
   };
 
-  const updateClientStatus = (clientName, newStatus) => {
-    setClients(prevClients =>
-      prevClients.map(client =>
-        client.name === clientName
-          ? {
-              ...client,
-              status: newStatus,
-              archived: false
-            }
-          : client
-      )
-    );
-  };
-
-  const updatePropertyOffer = (propertyName, update) => {
-    setProperties(prev =>
-      prev.map(p =>
-        p.name === propertyName
-          ? {
-              ...p,
-              ...update,
-              ...(update.offerStatus === "Accepted" ? { status: "Matched" } : {})
-            }
-          : p
-      )
-    );
-
-    if (update.offerStatus === "Accepted") {
-      const acceptedProperty = properties.find(p => p.name === propertyName);
-      setSalesProgressions(prev => [
-        ...prev,
-        // ✅ Use helper so defaults = "Not Done"
-        createNewSalesProgression(
-          acceptedProperty?.linkedClient || "",
-          acceptedProperty?.name || ""
-        )
-      ]);
+  const updateClientStatus = async (clientName, newStatus) => {
+    const target = clients.find(c => c.name === clientName);
+    if (target?.id) {
+      const { updateClientById } = await import("./lib/clientsApi");
+      await updateClientById(target.id, { status: newStatus, archived: false });
     }
   };
 
-  const updateClientProperties = (clientName, updatedProperties) => {
-    setClients(prevClients =>
-      prevClients.map(client =>
-        client.name === clientName
-          ? { ...client, properties: updatedProperties }
-          : client
-      )
-    );
+  const updatePropertyOffer = async (propertyName, update) => {
+    const property = properties.find(p => p.name === propertyName);
+    if (property?.id) {
+      const { updatePropertyById } = await import("./lib/propertiesApi");
+      const updates = {
+        ...update,
+        ...(update.offerStatus === "Accepted" ? { status: "Matched" } : {})
+      };
+      await updatePropertyById(property.id, updates);
+    }
+  };
+
+  const updateClientProperties = async (clientName, updatedProperties) => {
+    const client = clients.find(c => c.name === clientName);
+    if (client?.id) {
+      const { updateClientById } = await import("./lib/clientsApi");
+      await updateClientById(client.id, { properties: updatedProperties });
+    }
   };
 
   const toggleArchivedView = () => setShowArchived(prev => !prev);
 
-  const handleArchiveProfessional = (proToArchive) => {
-    setProfessionals(
-      professionals.map((p) =>
-        p.name === proToArchive.name ? { ...p, archived: true } : p
-      )
-    );
+  const handleArchiveProfessional = async (proToArchive) => {
+    if (proToArchive.id) {
+      const { archiveProfessionalById } = await import('./lib/professionalsApi');
+      await archiveProfessionalById(proToArchive.id);
+    }
     setSelectedProfessional(null);
   };
 
-  const handleRestoreProfessional = (proToRestore) => {
-    setProfessionals(
-      professionals.map((p) =>
-        p.name === proToRestore.name ? { ...p, archived: false } : p
-      )
-    );
+  const handleRestoreProfessional = async (proToRestore) => {
+    if (proToRestore.id) {
+      const { restoreProfessionalById } = await import('./lib/professionalsApi');
+      await restoreProfessionalById(proToRestore.id);
+    }
     setSelectedProfessional(null);
   };
 
   const toggleArchivedProfessionalsView = () => setShowArchivedProfessionals(prev => !prev);
 
-  const handleAddProfessional = (newPro) => {
-    setProfessionals([...professionals, { ...newPro, archived: false }]);
+  const handleAddProfessional = async (newPro) => {
+    const { createProfessional } = await import('./lib/professionalsApi');
+    await createProfessional({ ...newPro, archived: false });
     setIsAdding(false);
   };
 
-  const handleAcceptOffer = (clientName, propertyName) => {
-    setSalesProgressions(prev => [
-      ...prev,
-      createNewSalesProgression(clientName, propertyName) // ✅ Use centralised function
-    ]);
-
-    // ✅ Also mark the property as matched
-    markPropertyAsMatched(propertyName);
-
-    // ✅ Optionally, update client info if needed (optional)
-    updateClientInfo(clientName, { status: "Offer Accepted" });
+  const handleAcceptOffer = async (clientName, propertyName) => {
+    await createNewSalesProgression(clientName, propertyName);
+    await markPropertyAsMatched(propertyName);
+    await updateClientInfo(clientName, { status: "Offer Accepted" });
   };
 
-  const handleCancelMatch = (clientName, propertyName) => {
-    removeSalesProgressionRow(propertyName, clientName);
+  const handleCancelMatch = async (clientName, propertyName) => {
+    await removeSalesProgressionRow(propertyName, clientName);
 
-    setClients(prev =>
-      prev.map(c =>
-        c.name === clientName
-          ? {
-              ...c,
-              properties: c.properties.filter(p => p.name !== propertyName)
-            }
-          : c
-      )
-    );
+    const client = clients.find(c => c.name === clientName);
+    if (client?.id) {
+      const { updateClientById } = await import("./lib/clientsApi");
+      const updatedProperties = client.properties?.filter(p => p.name !== propertyName) || [];
+      await updateClientById(client.id, { properties: updatedProperties });
+    }
 
-    setProperties(prev =>
-      prev.map(p =>
-        p.name === propertyName
-          ? {
-              ...p,
-              linkedClient: "",
-              status: "On Market",
-              offerStatus: "None"
-            }
-          : p
-      )
-    );
+    const property = properties.find(p => p.name === propertyName);
+    if (property?.id) {
+      const { updatePropertyById } = await import("./lib/propertiesApi");
+      await updatePropertyById(property.id, {
+        linkedClient: "",
+        status: "On Market",
+        offerStatus: "None"
+      });
+    }
   };
 
-  const updateClientInfo = (originalName, updatedClient) => {
-    setClients(prev =>
-      prev.map(c => c.name === originalName ? updatedClient : c)
-    );
+  const updateClientInfo = async (originalName, updatedClient) => {
+    const client = clients.find(c => c.name === originalName);
+    if (client?.id) {
+      const { updateClientById } = await import("./lib/clientsApi");
+      await updateClientById(client.id, updatedClient);
+    }
 
-    setSalesProgressions(prev =>
-      prev.map(row =>
-        row.client === originalName
-          ? { ...row, client: updatedClient.name }
-          : row
-      )
-    );
+    // Update sales progressions with new client name
+    const progressionsToUpdate = salesProgressions.filter(row => row.client === originalName);
+    for (const progression of progressionsToUpdate) {
+      if (progression.id) {
+        const { updateSalesProgressionById } = await import("./lib/salesProgressionsApi");
+        await updateSalesProgressionById(progression.id, { client: updatedClient.name });
+      }
+    }
 
-    setProperties(prev =>
-      prev.map(p =>
-        p.linkedClient === originalName
-          ? { ...p, linkedClient: updatedClient.name }
-          : p
-      )
-    );
+    // Update properties with new client name
+    const propertiesToUpdate = properties.filter(p => p.linkedClient === originalName);
+    for (const property of propertiesToUpdate) {
+      if (property.id) {
+        const { updatePropertyById } = await import("./lib/propertiesApi");
+        await updatePropertyById(property.id, { linkedClient: updatedClient.name });
+      }
+    }
 
     setSelectedClient(updatedClient);
   };
@@ -227,8 +193,8 @@ function Contacts({
             {showForm && (
               <AddClientForm
                 onClose={() => setShowForm(false)}
-                onSave={(newClient) => {
-                  setClients((prev) => [...prev, { ...newClient, archived: false, properties: [] }]);
+                onSave={async (newClient) => {
+                  await createClient({ ...newClient, archived: false, properties: [] });
                 }}
               />
             )}
@@ -244,12 +210,12 @@ function Contacts({
             updateClientProperties={updateClientProperties}
             setProperties={setProperties}
             allProperties={properties}
-            updatePropertyLinkage={(propertyName, clientName) => {
-              setProperties(prev =>
-                prev.map(p =>
-                  p.name === propertyName ? { ...p, linkedClient: clientName } : p
-                )
-              );
+            updatePropertyLinkage={async (propertyName, clientName) => {
+              const property = properties.find(p => p.name === propertyName);
+              if (property?.id) {
+                const { updatePropertyById } = await import("./lib/propertiesApi");
+                await updatePropertyById(property.id, { linkedClient: clientName });
+              }
             }}
             handleAcceptOffer={handleAcceptOffer}
             updatePropertyOffer={updatePropertyOffer}
