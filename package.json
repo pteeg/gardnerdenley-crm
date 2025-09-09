@@ -4,7 +4,10 @@
   "type": "module",
   "description": "React TypeScript on Replit, using Vite bundler",
   "scripts": {
-    "dev": "vite",
+    "set:dev": "firebase use dev",
+    "set:prod": "firebase use prod",
+    "dev": "npm run set:dev && vite",
+    "prod": "npm run set:prod && vite",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -21,6 +24,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "firebase": "^12.2.1",
     "uuid": "^11.1.0"
   }
 }

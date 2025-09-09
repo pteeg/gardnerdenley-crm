@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import StatusToggle from "./StatusToggle";
 import "./SalesProgression.css";
+import Sidebar from "../Sidebar";
 import ProfessionalChooserButton from "../ProfessionalChooserButton";
 import { v4 as uuidv4 } from "uuid";
 
@@ -70,16 +71,17 @@ const SalesProgression = ({
 
   return (
     <div className="sales-progression">
-      <div className="sales-progression-header">
-        <button
-          onClick={() => setShowCompleted(!showCompleted)}
-          className="view-completed-btn"
-        >
-          {showCompleted ? "Hide Completed Deals" : "View Completed Deals"}
-        </button>
-      </div>
-      <div className="sales-table-container">
-        <table className="sales-progression-table">
+      <div className="sales-progression-body">
+        <Sidebar
+          title="Sales Progression"
+          items={[
+            { key: "active", label: "Active Deals", icon: "📈", active: !showCompleted, onClick: () => setShowCompleted(false) },
+            { key: "completed", label: "Completed Deals", icon: "✅", active: showCompleted, onClick: () => setShowCompleted(true) },
+          ]}
+        />
+        <div className="sales-progression-content">
+          <div className="sales-table-container">
+          <table className="sales-progression-table">
           <thead>
             <tr>
               <th>Client</th>
@@ -402,7 +404,9 @@ const SalesProgression = ({
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+          </div>
+        </div>
       </div>
     </div>
   );

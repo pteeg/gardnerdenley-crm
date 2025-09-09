@@ -1,5 +1,6 @@
 import React from "react";
 import "./WongaReport.css";
+import Sidebar from "../Sidebar";
 
 const WongaReport = ({ data }) => {
   // Filter for completed deals only
@@ -14,8 +15,16 @@ const WongaReport = ({ data }) => {
 
   return (
     <div className="wonga-report">
-      <h1>Wonga Report</h1>
-      <table className="wonga-table">
+      <div className="wonga-body">
+        <Sidebar
+          title="Wonga Report"
+          items={[
+            { key: 'completed', label: 'Completed Deals', icon: '✅', active: true, onClick: () => {} },
+          ]}
+        />
+        <div className="wonga-content">
+          <h1>Wonga Report</h1>
+          <table className="wonga-table">
         <thead>
           <tr>
             <th>Client</th>
@@ -46,7 +55,9 @@ const WongaReport = ({ data }) => {
             </tr>
           )}
         </tbody>
-      </table>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

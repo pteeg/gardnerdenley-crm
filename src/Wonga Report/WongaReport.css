@@ -1,4 +1,13 @@
 .wonga-report {
+  padding: 0;
+}
+
+.wonga-body {
+  display: flex;
+}
+
+.wonga-content {
+  flex: 1;
   padding: 2rem;
 }
 

@@ -1,6 +1,15 @@
 /* components/SalesProgression/SalesProgression.css */
 
 .sales-progression {
+  padding: 0;
+}
+
+.sales-progression-body {
+  display: flex;
+}
+
+.sales-progression-content {
+  flex: 1;
   padding: 20px;
 }
 

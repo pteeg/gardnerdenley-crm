@@ -5,6 +5,7 @@ import ProfessionalsTable from "./ProfessionalsTable";
 import ProfessionalPage from "./ProfessionalPage";
 import NewProfessionalModal from "./NewProfessionalModal";
 import "./Contacts.css";
+import Sidebar from "./Sidebar";
 import AddClientForm from "./AddClientForm";
 
 function Contacts({
@@ -190,21 +191,25 @@ function Contacts({
   return (
     <div className="contacts-container">
       {!selectedClient && !selectedProfessional && (
-        <div className="contacts-sidebar">
-          <div className="sidebar-title">CONTACTS</div>
-          <button
-            onClick={() => setSubPage("Clients")}
-            className={`sidebar-btn ${subPage === "Clients" ? "active" : ""}`}
-          >
-            👤 Clients
-          </button>
-          <button
-            onClick={() => setSubPage("Professionals")}
-            className={`sidebar-btn ${subPage === "Professionals" ? "active" : ""}`}
-          >
-            👤 Professionals
-          </button>
-        </div>
+        <Sidebar
+          title="Contacts"
+          items={[
+            {
+              key: "clients",
+              label: "Clients",
+              icon: "👤",
+              active: subPage === "Clients",
+              onClick: () => setSubPage("Clients"),
+            },
+            {
+              key: "professionals",
+              label: "Professionals",
+              icon: "👤",
+              active: subPage === "Professionals",
+              onClick: () => setSubPage("Professionals"),
+            },
+          ]}
+        />
       )}
 
       <div className="contacts-main">

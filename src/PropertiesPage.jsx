@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './PropertiesPage.css';
+import Sidebar from './Sidebar';
 import NewPropertyModal from './NewPropertyModal';
 import PropertyPage from './PropertyPage';
 
@@ -79,46 +80,17 @@ const PropertiesPage = ({ professionals }) => {
 
   return (
     <div className="properties-container">
-      {/* Sidebar */}
-      <div className="properties-sidebar">
-        <h3>PROPERTIES</h3>
-        <button
-          className={`sidebar-button ${selectedFilter === 'all' ? 'active' : ''}`}
-          onClick={() => handleFilterClick('all')}
-        >
-          🏡 All Properties
-        </button>
-        <button
-          className={`sidebar-button ${selectedFilter === 'on' ? 'active' : ''}`}
-          onClick={() => handleFilterClick('on')}
-        >
-          🟢 On Market
-        </button>
-        <button
-          className={`sidebar-button ${selectedFilter === 'off' ? 'active' : ''}`}
-          onClick={() => handleFilterClick('off')}
-        >
-          🔴 Off Market
-        </button>
-        <button
-          className={`sidebar-button ${selectedFilter === 'archived' ? 'active' : ''}`}
-          onClick={() => handleFilterClick('archived')}
-        >
-          📁 Archived
-        </button>
-        <button
-          className={`sidebar-button ${selectedFilter === 'matched' ? 'active' : ''}`}
-          onClick={() => handleFilterClick('matched')}
-        >
-          🤝 Matched
-        </button>
-        <button
-          className={`sidebar-button ${selectedFilter === 'sold' ? 'active' : ''}`}
-          onClick={() => handleFilterClick('sold')}
-        >
-          🎉 Sold
-        </button>
-      </div>
+      <Sidebar
+        title="Properties"
+        items={[
+          { key: 'all', label: 'All Properties', icon: '🏡', active: selectedFilter === 'all', onClick: () => handleFilterClick('all') },
+          { key: 'on', label: 'On Market', icon: '🟢', active: selectedFilter === 'on', onClick: () => handleFilterClick('on') },
+          { key: 'off', label: 'Off Market', icon: '🔴', active: selectedFilter === 'off', onClick: () => handleFilterClick('off') },
+          { key: 'archived', label: 'Archived', icon: '📁', active: selectedFilter === 'archived', onClick: () => handleFilterClick('archived') },
+          { key: 'matched', label: 'Matched', icon: '🤝', active: selectedFilter === 'matched', onClick: () => handleFilterClick('matched') },
+          { key: 'sold', label: 'Sold', icon: '🎉', active: selectedFilter === 'sold', onClick: () => handleFilterClick('sold') },
+        ]}
+      />
 
       {/* Main content */}
       <div className="properties-content">

@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "prod": "gardnerdenley-crm",
+    "dev": "gardnerdenley-crm-dev"
+  },
+  "targets": {},
+  "etags": {}
+}

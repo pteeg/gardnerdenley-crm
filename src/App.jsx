@@ -201,7 +201,7 @@ function App() {
       </div>
 
       {/* ✅ Page Content */}
-      <div style={{ padding: "2rem" }}>
+      <div style={{ padding: "2rem 2rem 2rem 0" }}>
         {activeTab === "Contacts" && (
           <Contacts
             clients={clients}
