@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, updateDoc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 
 const clientsCol = collection(db, "clients");
@@ -18,6 +18,15 @@ export async function createClient(client) {
     brief: client.brief || "",
     maxBudget: typeof client.maxBudget === "number" ? client.maxBudget : Number(client.maxBudget || 0),
     status: client.status || "Searching",
+    spouse1FirstName: client.spouse1FirstName || "",
+    spouse1Surname: client.spouse1Surname || "",
+    spouse2FirstName: client.spouse2FirstName || "",
+    spouse2Surname: client.spouse2Surname || "",
+    clientSource: client.clientSource || "",
+    referralContact: client.referralContact || "",
+    positionFunding: client.positionFunding || "",
+    disposal: client.disposal || "",
+    searchStartDate: client.searchStartDate || "",
     archived: false,
     properties: client.properties || [],
     createdAt: Date.now(),
@@ -37,6 +46,11 @@ export async function archiveClientById(id) {
 
 export async function restoreClientById(id) {
   await updateClientById(id, { archived: false });
+}
+
+export async function deleteClientById(id) {
+  const ref = doc(db, "clients", id);
+  await deleteDoc(ref);
 }
 
 

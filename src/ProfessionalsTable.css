@@ -10,33 +10,42 @@
 }
 
 .professionals-header h2 {
+  font-family: sans-serif; /* align with app */
   font-size: 2rem;
   font-weight: 600;
-  color: #555;
+  color: #333;
 }
 
 .professionals-buttons {
   display: flex;
-  gap: 1rem;
+  gap: 1.25rem;
 }
+
+/* Match Clients table header structure */
+.table-header { display: flex; align-items: center; margin-bottom: 8px; margin-top: -5px; }
+.table-header h2 { font-family: sans-serif; font-weight: 550; font-size: 1.6rem; color: #555; }
+.table-actions { margin-left: auto; display: flex; gap: 1rem; }
 
 .professionals-table {
   width: 100%;
-  margin-top: 1rem;
   border-collapse: collapse;
+  font-family: sans-serif;
 }
 
 .professionals-table th {
   text-align: left;
   padding: 0.75rem;
   font-weight: 600;
-  background-color: #555;
-  color: white;
+  font-family: sans-serif;
+  background-color: #f9f9f9; /* like clients table */
+  color: #333;
+  border-bottom: 1px solid #ddd;
 }
 
 .professionals-table td {
   padding: 0.75rem;
   font-weight: 400;
+  font-family: sans-serif;
   color: #333;
   border-bottom: 1px solid #ddd;
 }
@@ -47,13 +56,21 @@
   padding: 1rem;
 }
 
-.archive-btn {
-  background-color: #FF6464;
-  color: white;
+.professionals-table .archive-btn {
+  background-color: #ffffff !important;
+  color: #555555 !important;
   padding: 0.3rem 0.75rem;
-  border: none;
+  border: 1px solid #555555 !important;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  font-size: 0.95rem; /* match Properties archive button */
+}
+
+.professionals-table .archive-btn:hover {
+  background-color: #555555 !important;
+  color: #ffffff !important;
+  border-color: #555555 !important;
 }
 
 .restore-btn {
@@ -63,4 +80,34 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+/* Header buttons consistent with clients table */
+.toggle-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+  color: #333;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.add-btn {
+  background-color: #555; /* same as clients new-client-btn */
+  color: #ffffff;
+  padding: 0.3rem 0.75rem; /* archive style sizing to match app */
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Align archive button to the right edge of the last column */
+.professionals-table td:last-child {
+  text-align: right;
+  padding-left: 0;
+  padding-right: 1.5rem;
 }

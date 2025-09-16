@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, updateDoc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, onSnapshot, query, where, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
 const propertiesCol = collection(db, "properties");
@@ -22,6 +22,7 @@ export async function createProperty(property) {
     address: property.address || "",
     offerStatus: property.offerStatus || null,
     offerAmount: property.offerAmount || null,
+    vendor: property.vendor || "",
     createdAt: Date.now(),
   };
   const ref = await addDoc(propertiesCol, payload);
@@ -35,6 +36,11 @@ export async function updatePropertyById(id, updates) {
 
 export async function toggleArchiveProperty(id, archived) {
   await updatePropertyById(id, { archived });
+}
+
+export async function deletePropertyById(id) {
+  const ref = doc(db, "properties", id);
+  await deleteDoc(ref);
 }
 
 

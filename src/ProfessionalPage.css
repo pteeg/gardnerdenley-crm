@@ -46,3 +46,55 @@
   border-bottom: 1px solid #ddd;
   color: #333;
 }
+
+.professional-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.detail-section {
+  background: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.detail-section h3 {
+  color: #043161;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #043161;
+  padding-bottom: 0.5rem;
+}
+
+.properties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.property-item {
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.property-item.historical {
+  background: #f8f9fa;
+  border-color: #28a745;
+}
+
+.property-details {
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.completed-badge {
+  color: #28a745;
+  font-weight: bold;
+  margin-left: 0.5rem;
+}

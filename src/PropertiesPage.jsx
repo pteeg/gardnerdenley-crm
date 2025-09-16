@@ -10,7 +10,7 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
   const [selectedProperty, setSelectedProperty] = useState(null);
 
   const filteredProperties = properties.filter(property => {
-    if (selectedFilter === 'archived') return property.archived;
+    if (showArchived) return property.archived;
     if (selectedFilter === 'on') return property.status === "On Market" && !property.archived;
     if (selectedFilter === 'off') return property.status === "Off Market" && !property.archived;
     if (selectedFilter === 'matched') return property.status === "Matched" && !property.archived;
@@ -42,17 +42,49 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
     await toggleArchiveProperty(id, !archived);
   };
 
+  const handleDeleteProperty = async (id) => {
+    if (window.confirm('Are you sure you want to permanently delete this property? This action cannot be undone.')) {
+      const { deletePropertyById } = await import('./lib/propertiesApi');
+      await deletePropertyById(id);
+    }
+  };
+
+  // Get the title based on selected filter
+  const getPageTitle = () => {
+    if (showArchived) return 'Archived Properties';
+    const filterLabels = {
+      'all': 'All Properties',
+      'on': 'On Market',
+      'off': 'Off Market',
+      'matched': 'Matched',
+      'sold': 'Acquired'
+    };
+    return filterLabels[selectedFilter] || 'Properties';
+  };
+
+  const handleUpdateProperty = async (id, updatedData) => {
+    const { updatePropertyById } = await import('./lib/propertiesApi');
+    await updatePropertyById(id, updatedData);
+    
+    // Update the selectedProperty with the new data
+    if (selectedProperty && selectedProperty.id === id) {
+      setSelectedProperty(prev => ({
+        ...prev,
+        ...updatedData
+      }));
+    }
+  };
+
   return (
     <div className="properties-container">
       <Sidebar
         title="Properties"
         items={[
-          { key: 'all', label: 'All Properties', icon: '🏡', active: selectedFilter === 'all', onClick: () => handleFilterClick('all') },
-          { key: 'on', label: 'On Market', icon: '🟢', active: selectedFilter === 'on', onClick: () => handleFilterClick('on') },
-          { key: 'off', label: 'Off Market', icon: '🔴', active: selectedFilter === 'off', onClick: () => handleFilterClick('off') },
-          { key: 'archived', label: 'Archived', icon: '📁', active: selectedFilter === 'archived', onClick: () => handleFilterClick('archived') },
-          { key: 'matched', label: 'Matched', icon: '🤝', active: selectedFilter === 'matched', onClick: () => handleFilterClick('matched') },
-          { key: 'sold', label: 'Sold', icon: '🎉', active: selectedFilter === 'sold', onClick: () => handleFilterClick('sold') },
+          { key: 'all', label: 'All Properties', active: selectedFilter === 'all' && !showArchived, onClick: () => handleFilterClick('all') },
+          { key: 'on', label: 'On Market', active: selectedFilter === 'on' && !showArchived, onClick: () => handleFilterClick('on') },
+          { key: 'off', label: 'Off Market', active: selectedFilter === 'off' && !showArchived, onClick: () => handleFilterClick('off') },
+          { key: 'matched', label: 'Matched', active: selectedFilter === 'matched' && !showArchived, onClick: () => handleFilterClick('matched') },
+          { key: 'sold', label: 'Acquired', active: selectedFilter === 'sold' && !showArchived, onClick: () => handleFilterClick('sold') },
         ]}
       />
 
@@ -61,8 +93,15 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
         {!selectedProperty ? (
           <>
             <div className="properties-header">
-              <h2>Properties</h2>
-              <button onClick={() => setIsAdding(true)}>+ Add Property</button>
+              <h2>{getPageTitle()}</h2>
+              <div className="table-actions">
+                {!showArchived && (
+                  <button className="new-client-btn" onClick={() => setIsAdding(true)}>+ Add Property</button>
+                )}
+                <button onClick={onToggleView} className="toggle-btn">
+                  {showArchived ? "Show Active" : "Show Archived"}
+                </button>
+              </div>
             </div>
 
             <table className="properties-table">
@@ -70,9 +109,9 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
                 <tr>
                   <th>Name</th>
                   <th>Brief</th>
-                  <th>Price</th>
+                  <th>Guide Price</th>
                   <th>Status</th>
-                  <th>Action</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -80,18 +119,20 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
                   <tr key={property.id}>
                     <td onClick={() => handleRowClick(property)}>{property.name}</td>
                     <td onClick={() => handleRowClick(property)}>{property.brief}</td>
-                    <td onClick={() => handleRowClick(property)}>{property.price}</td>
+                    <td onClick={() => handleRowClick(property)}>{property.price ? `£${Number(property.price).toLocaleString()}` : ''}</td>
                     <td onClick={() => handleRowClick(property)}>{property.status}</td>
                     <td>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent row click
-                          handleToggleArchive(property.id, property.archived);
-                        }}
-                        className={property.archived ? "unarchive-button" : "archive-button"}
-                      >
-                        {property.archived ? "Restore" : "Archive"}
-                      </button>
+                      <div className="action-buttons">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent row click
+                            handleToggleArchive(property.id, property.archived);
+                          }}
+                          className={property.archived ? "unarchive-button" : "archive-button"}
+                        >
+                          {property.archived ? "Restore" : "Archive"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -99,7 +140,13 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
             </table>
           </>
         ) : (
-          <PropertyPage property={selectedProperty} onBack={handleBackFromDetail} />
+          <PropertyPage 
+            property={selectedProperty} 
+            onBack={handleBackFromDetail}
+            professionals={professionals}
+            onUpdateProperty={handleUpdateProperty}
+            onDeleteProperty={handleDeleteProperty}
+          />
         )}
       </div>
 

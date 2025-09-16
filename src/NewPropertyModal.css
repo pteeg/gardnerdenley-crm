@@ -17,9 +17,11 @@
   background-color: white;
   padding: 2rem;
   border-radius: 12px;
-  width: 600px;
+  width: 90vw;
+  max-width: 1600px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -28,14 +30,46 @@
   color: #043161;
 }
 
-.form-group {
-  margin-bottom: 1rem;
+.property-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 0.25rem 1.1rem;
 }
+
+.form-group {
+  margin-bottom: 0.1rem;
+}
+
+/* Toggle segment for On/Off Market */
+.market-group { display: inline-flex; gap: 6px; }
+.market-option {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  color: #333;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.market-option.active { background: #043161; color: #fff; border-color: #043161; }
+
+/* Vendor type buttons */
+.vendor-group { display: inline-flex; gap: 6px; }
+.vendor-option {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  color: #333;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.vendor-option.active { background: #043161; color: #fff; border-color: #043161; }
 
 .form-group label {
   display: block;
   font-weight: bold;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
   color: #043161;
 }
 
@@ -43,11 +77,33 @@
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.4rem;
   font-size: 1rem;
   border-radius: 6px;
   border: 1px solid #ccc;
   box-sizing: border-box;
+}
+
+/* Number input styling - ensure spinners are visible */
+.form-group input[type="number"] {
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  padding-right: 30px; /* Make room for spinners */
+}
+
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: inner-spin-button;
+  opacity: 1;
+  height: 100%;
+  cursor: pointer;
+  display: block;
+  position: absolute;
+  right: 5px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
 }
 
 .form-group textarea {
@@ -68,6 +124,27 @@
   margin-top: 2rem;
 }
 
+.full-width-row {
+  grid-column: 1 / span 5;
+}
+
+@media (max-width: 1200px) {
+  .modal-content { width: 94vw; }
+  .property-form { grid-template-columns: 1fr 1fr 1fr; gap: 1rem 1.75rem; }
+  .full-width-row { grid-column: 1 / span 3; }
+}
+
+@media (max-width: 980px) {
+  .modal-content { width: 94vw; }
+  .property-form { grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem; }
+  .full-width-row { grid-column: 1 / span 2; }
+}
+
+@media (max-width: 620px) {
+  .property-form { grid-template-columns: 1fr; gap: 0.875rem; }
+  .full-width-row { grid-column: 1 / span 1; }
+}
+
 .cancel-btn,
 .save-btn {
   padding: 0.5rem 1rem;
@@ -85,4 +162,11 @@
 .save-btn {
   background-color: #043161;
   color: white;
+}
+
+/* Ensure New Property modal width overrides any global modal-content rules */
+.new-property-modal .modal-content {
+  width: 90vw !important;
+  max-width: 1600px !important;
+  overflow-x: hidden;
 }

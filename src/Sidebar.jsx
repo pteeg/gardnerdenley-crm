@@ -4,7 +4,7 @@ import "./Sidebar.css";
 function Sidebar({ title, items = [], footer = null }) {
   return (
     <aside className="gd-sidebar">
-      {title ? <div className="gd-sidebar-title">{title.toUpperCase()}</div> : null}
+      {title ? <div className="gd-sidebar-title">{title}</div> : null}
       <nav className="gd-sidebar-items">
         {items.map((item) => (
           <button

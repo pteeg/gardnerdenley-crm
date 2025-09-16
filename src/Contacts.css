@@ -6,7 +6,7 @@
 
 .contacts-sidebar {
   width: 180px;
-  background-color: #f7f7f7;
+  background-color: #555;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -14,13 +14,6 @@
   border-right: 1px solid #ddd;
 }
 
-.sidebar-title {
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  color: #888;
-  margin-bottom: 0.5rem;
-}
 
 .sidebar-btn {
   display: flex;
@@ -30,21 +23,23 @@
   width: 100%;
   border-radius: 8px;
   border: none;
-  color: #111;
-  background-color: transparent;
+  color: white;
+  background-color: #555;
   text-align: left;
   cursor: pointer;
   font-size: 0.9rem;
 }
 
 .sidebar-btn.active {
-  background-color: #e7f0fa;
+  background-color: white;
+  color: #555;
+  border: 2px solid #555;
   font-weight: bold;
 }
 
 .contacts-main {
   flex: 1;
-  padding: 1rem;
+  padding: 0 10px 20px 20px;
   width: 100%; /* Ensure it stretches full width when sidebar is hidden */
 }
 

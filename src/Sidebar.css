@@ -13,9 +13,9 @@
 
 .gd-sidebar-title {
   font-family: sans-serif;
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #ddd;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: white;
   margin-bottom: 0.5rem;
 }
 
@@ -33,19 +33,21 @@
   width: 100%;
   border-radius: 8px;
   border: none;
-  color: #fff;
-  background-color: transparent;
+  color: white;
+  background-color: #555;
   text-align: left;
   cursor: pointer;
   font-size: 0.9rem;
 }
 
 .gd-sidebar-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: #666;
 }
 
 .gd-sidebar-item.active {
-  background-color: rgba(255, 255, 255, 0.16);
+  background-color: white;
+  color: #555;
+  border: 2px solid #555;
   font-weight: 600;
 }
 

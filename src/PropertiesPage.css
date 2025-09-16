@@ -43,24 +43,45 @@
 
 .properties-content {
   flex: 1;
-  padding: 20px;
+  padding: 18px 10px 20px 20px;
 }
 
 .properties-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .properties-header h2 {
   margin: 0;
+  font-family: sans-serif;
+  font-size: 1.6rem;
+  font-weight: 550;
+  color: #555;
+}
+
+.table-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.toggle-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+  color: #333;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .properties-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  table-layout: fixed;
 }
 
 .properties-table th,
@@ -71,32 +92,73 @@
   cursor: pointer;
 }
 
+.properties-table th:nth-child(1),
+.properties-table td:nth-child(1) {
+  width: 20%; /* Name */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.properties-table th:nth-child(2),
+.properties-table td:nth-child(2) {
+  width: 25%; /* Brief */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.properties-table th:nth-child(3),
+.properties-table td:nth-child(3) {
+  width: 20%; /* Guide Price */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.properties-table th:nth-child(4),
+.properties-table td:nth-child(4) {
+  width: 15%; /* Status */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.properties-table th:nth-child(5),
+.properties-table td:nth-child(5) {
+  width: 20%; /* Actions */
+  text-align: right;
+  padding-left: 0;
+  padding-right: 1.5rem;
+  overflow: visible; /* Allow buttons to be fully visible */
+}
+
+
 .properties-table tr:hover {
   background-color: #f5f5f5;
 }
 
 .archive-button,
 .unarchive-button {
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.95rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .archive-button {
-  background-color: #dc3545;
-  color: white;
-  padding: 6px 10px;
-  font-size: 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  background-color: #ffffff !important;
+  color: #555555 !important;
+  border: 1px solid #555555 !important;
 }
 
 .archive-button:hover {
-  background-color: #c82333;
-}
+  background-color: #555555 !important;
+  color: #ffffff !important;
+  border-color: #555555 !important;
 }
 
 .unarchive-button {
@@ -106,4 +168,42 @@
 
 .unarchive-button:hover {
   background-color: #31b0d5;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.delete-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.delete-button:hover {
+  background-color: #c82333;
+}
+
+.new-client-btn {
+  background-color: #555; /* match archive button feel but neutral */
+  color: #ffffff;
+  padding: 0.3rem 0.75rem; /* like archive buttons */
+  border-radius: 4px;      /* like archive buttons */
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
 }

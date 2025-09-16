@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, updateDoc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 
 const salesProgressionsCol = collection(db, "salesProgressions");
@@ -63,5 +63,25 @@ export async function updateSalesProgressionById(id, updates) {
 
 export async function deleteSalesProgressionById(id) {
   const ref = doc(db, "salesProgressions", id);
-  await updateDoc(ref, { deleted: true });
+  await deleteDoc(ref);
+}
+
+export async function deleteSalesProgressionByClientAndAddress(client, address) {
+  const q = query(salesProgressionsCol, where("client", "==", client), where("address", "==", address));
+  const snap = await getDocs(q);
+  const deletions = [];
+  snap.forEach((d) => {
+    deletions.push(deleteDoc(doc(db, "salesProgressions", d.id)));
+  });
+  await Promise.all(deletions);
+}
+
+export async function deleteSalesProgressionByAddress(address) {
+  const q = query(salesProgressionsCol, where("address", "==", address));
+  const snap = await getDocs(q);
+  const deletions = [];
+  snap.forEach((d) => {
+    deletions.push(deleteDoc(doc(db, "salesProgressions", d.id)));
+  });
+  await Promise.all(deletions);
 }

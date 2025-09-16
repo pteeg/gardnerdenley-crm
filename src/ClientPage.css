@@ -1,6 +1,131 @@
 .client-page {
-  padding: 2rem;
+  padding: 0;
   font-family: sans-serif;
+  background: white;
+}
+
+/* Header Section */
+.client-header {
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.back-btn {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  color: #333;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.back-btn:hover {
+  background: #e9e9e9;
+}
+
+.client-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-title {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+}
+
+.client-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 500;
+  max-width: fit-content;
+}
+
+.client-budget {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.budget-label {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.budget-value {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.header-actions {
+  flex-shrink: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.back-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.client-budget {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.budget-label {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.budget-value {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
 }
 
 .back-btn {
@@ -9,20 +134,401 @@
   color: #043161;
   cursor: pointer;
   font-size: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Action buttons container */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+/* Button Styling to match Property Page */
+.edit-button, .archive-button, .delete-button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.edit-button:hover {
+  background: #f8f9fa;
+  border-color: #999;
+}
+
+.archive-button {
+  border-color: #ffc107;
+  color: #856404;
+  background: #fff3cd;
+}
+
+.archive-button:hover {
+  background: #ffeaa7;
+  border-color: #f39c12;
+}
+
+.delete-button {
+  border-color: #dc3545;
+  color: #721c24;
+  background: #f8d7da;
+}
+
+.delete-button:hover {
+  background: #f5c6cb;
+  border-color: #c82333;
 }
 
 .client-name {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 600;
   color: #333;
   margin-bottom: 1.5rem;
+  line-height: 1.2;
 }
 
-.client-sections {
-  display: flex;
+/* Main Content Grid */
+.client-content {
+  display: grid;
+  grid-template-columns: 1.2fr 1.3fr;
   gap: 2rem;
-  align-items: flex-start;
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: calc(100vh - 200px);
+}
+
+.client-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.client-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.client-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #555;
+}
+
+/* Contact Info Styling */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.contact-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.contact-value {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Search Info Styling */
+.search-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.search-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.search-value {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.referral-detail {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid #555;
+}
+
+.referral-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.referral-value {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Brief Info Styling */
+.brief-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.brief-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.brief-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.brief-value {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Prospective Properties Styling */
+.add-property-btn {
+  padding: 0.4rem 0.8rem;
+  background: #555;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.add-property-btn:hover {
+  background: #666;
+}
+
+.property-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prospective-property-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 1rem;
+  align-items: start;
+}
+
+.property-main-info h4 {
+  margin: 0 0 0.25rem 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.property-main-info .property-price {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.property-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-self: end;
+}
+
+.offer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.offer-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.offer-status-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.offer-label {
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.offer-btn {
+  padding: 0.3rem 0.5rem; /* ensure equal visual height with .remove-btn */
+  background: #007bff;
+  color: white;
+  border: 1px solid #007bff; /* match button height/feel with border */
+  border-radius: 4px;
+  font-size: 0.8rem; /* match .remove-btn */
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.offer-btn:hover {
+  background: #0056b3;
+}
+
+.accept-btn {
+  padding: 0.2rem 0.4rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.accept-btn:hover {
+  background: #218838;
+}
+
+.decline-btn {
+  padding: 0.2rem 0.4rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.decline-btn:hover {
+  background: #c82333;
+}
+
+.remove-btn {
+  padding: 0.25rem 0.5rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  min-width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-btn:hover {
+  background: #c82333;
+}
+
+/* Offer Modal Styling */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #555;
+  box-shadow: 0 0 0 2px rgba(85, 85, 85, 0.2);
+}
+.detail-section {
+  background-color: #f7fbff; /* subtle blue */
+  padding: 1.25rem 1.25rem 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #e3eef8; /* light blue border */
+  box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+  height: fit-content;
+}
+
+.detail-section.full-height {
+  height: auto;
+}
+
+.card-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.05rem;
+  color: #333;
+}
+
+.card-name {
+  font-size: 1rem;
+}
+
+.client-col {
+  display: block;
+}
+
+.full-width-row {
+  grid-column: 1 / span 3;
 }
 
 /* Left column (Contact & Requirements) */
@@ -59,6 +565,17 @@
 .client-box li {
   margin: 0.25rem 0;
   color: #444;
+}
+
+/* Match Add Client modal brief height */
+.brief-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  min-height: 116px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 1rem;
 }
 
 .client-box ul {
@@ -177,6 +694,26 @@
   background-color: #f9f9f9;
 }
 
+/* Prospective properties cards */
+.property-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.property-offer-card {
+  background: #ffffff;
+  border: 1px solid #e3eef8;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.property-offer-card h4 {
+  margin: 0 0 0.5rem 0;
+}
+
 .property-option {
   display: flex;
   justify-content: space-between;
@@ -190,14 +727,16 @@
 }
 
 .remove-btn {
-  background: none;
-  border: none;
-  color: #b00;
+  padding: 0.25rem 0.5rem;
+  background: #ffffff;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  font-size: 0.8rem;
   cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
+  margin-top: 0; /* align with Log Offer */
 }
 
 .remove-btn:hover {
-  text-decoration: underline;
+  background: #ffe5e8;
 }

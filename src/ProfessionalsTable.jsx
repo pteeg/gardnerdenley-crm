@@ -15,14 +15,14 @@ function ProfessionalsTable({
       <div className="table-header">
         <h2>{showArchived ? "Archived Professionals" : "Active Professionals"}</h2>
         <div className="table-actions">
+          {!showArchived && (
+            <button onClick={onAddProfessional} className="add-btn">
+              + New Professional
+            </button>
+          )}
           <button onClick={onToggleView} className="toggle-btn">
             {showArchived ? "Show Active" : "Show Archived"}
           </button>
-          {!showArchived && (
-            <button onClick={onAddProfessional} className="add-btn">
-              + Add Professional
-            </button>
-          )}
         </div>
       </div>
 
@@ -34,7 +34,7 @@ function ProfessionalsTable({
             <th>Phone</th>
             <th>Email</th>
             <th>Type</th>
-            <th>Actions</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>

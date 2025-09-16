@@ -23,18 +23,21 @@
   width: 100%;
   margin-top: 1rem;
   border-collapse: collapse;
+  font-family: sans-serif;
 }
 
 .properties-table th {
   text-align: left;
   padding: 0.75rem;
   font-weight: 600;
+  font-family: sans-serif;
   background-color: #555;
   color: white;
 }
 
 .properties-table td {
   padding: 0.75rem;
+  font-family: sans-serif;
   color: #333;
   border-bottom: 1px solid #ddd;
 }
@@ -45,13 +48,13 @@
   padding: 1rem;
 }
 
-.archive-btn {
-  background-color: #c0392b;
-  color: white;
-  padding: 0.3rem 0.75rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.properties-container table tbody tr td button.archive-btn {
+  background-color: #ffffff !important;
+  color: #555555 !important;
+  padding: 0.3rem 0.75rem !important;
+  border: 1px solid #555555 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
 }
 
 .restore-btn {
@@ -61,4 +64,19 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+/* Force orange archive button - highest specificity */
+.properties-container .properties-table tbody tr td button[class*="archive"] {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #555555 !important;
+  color: #555555 !important;
+}
+
+.properties-container table tbody tr td button.archive-btn:hover,
+.properties-container .properties-table tbody tr td button[class*="archive"]:hover {
+  background-color: #555555 !important;
+  color: #ffffff !important;
+  border-color: #555555 !important;
 }

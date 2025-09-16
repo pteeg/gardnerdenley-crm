@@ -1,6 +1,20 @@
 import React from "react";
 import "./ClientsTable.css";
 
+// Helper function to format client names
+function formatClientName(client) {
+  if (client.spouse1FirstName) {
+    if (client.spouse2FirstName) {
+      return `${client.spouse1FirstName} and ${client.spouse2FirstName}`;
+    }
+    // Single spouse: show first + surname if present
+    if (client.spouse1Surname) return `${client.spouse1FirstName} ${client.spouse1Surname}`;
+    return client.spouse1FirstName;
+  }
+  // Fallback to old name field for existing data
+  return client.name || "Unknown";
+}
+
 function ClientsTable({ 
   clients, 
   onNewClientClick, 
@@ -15,14 +29,14 @@ function ClientsTable({
       <div className="table-header">
         <h2>{showArchived ? "Archived Clients" : "Active Clients"}</h2>
         <div className="table-actions">
-          <button onClick={onToggleView} className="toggle-btn">
-            {showArchived ? "Show Active" : "Show Archived"}
-          </button>
           {!showArchived && (
             <button onClick={onNewClientClick} className="new-client-btn">
               + New Client
             </button>
           )}
+          <button onClick={onToggleView} className="toggle-btn">
+            {showArchived ? "Show Active" : "Show Archived"}
+          </button>
         </div>
       </div>
 
@@ -31,22 +45,22 @@ function ClientsTable({
           <tr>
             <th>Name</th>
             <th>Status</th>
-            <th>Brief</th>
+            <th>Client Source</th>
             <th>Max Budget</th>
             <th>Phone</th>
-            <th>Actions</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {clients.map((client, index) => (
             <tr key={index} onClick={() => onRowClick(client)} className="clickable-row">
-              <td>{client.name}</td>
+              <td>{formatClientName(client)}</td>
               <td>
                 <span className={`status-badge ${(client.status || "unknown").toLowerCase().replace(/\s/g, '-')}`}>
                   {client.status || "Unknown"}
                 </span>
               </td>
-              <td>{client.brief}</td>
+              <td>{client.clientSource || "—"}</td>
               <td>£{Number(client.maxBudget).toLocaleString()}</td>
               <td>{client.phoneNumber}</td>
               <td>

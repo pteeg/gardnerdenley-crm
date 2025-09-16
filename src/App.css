@@ -5,44 +5,74 @@ body {
 
 /* ---------- HEADER ---------- */
 .header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 150px 1fr auto; /* reduced logo column width to account for margin */
   align-items: center;
   position: relative;
-  padding: 1rem;
+  padding: 0.25rem;
   font-family: sans-serif;
+  min-height: 160px; /* match logo height to center everything */
 }
 
 .logo {
-  width: 50px;
-  height: 50px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
+  object-fit: contain;
+  justify-self: start; /* sits in left column */
+  margin-left: 10px; /* move logo slightly to the right */
 }
 
 .nav-pills {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  justify-self: center; /* centers over main content column */
   background-color: #f5f5f5;
   border-radius: 999px;
   display: flex;
   overflow: hidden;
+  padding: 0; /* remove inner padding so active pill fills height */
+  gap: 0.2rem; /* small spacing between pills */
+  align-self: center; /* center vertically with logo */
+  position: relative; /* for sliding highlight */
 }
 
 .nav-button {
-  padding: 0.95rem 1.5rem;
+  padding: 1.2rem 1.8rem; /* pill size */
   background-color: transparent;
   color: black;
   font-weight: 500;
+  font-size: 1.05rem; /* slightly smaller text */
   border: none;
   cursor: pointer;
   border-radius: 999px;
   transition: background-color 0.2s ease;
+  display: flex; /* ensure vertical centering and full height */
+  align-items: center;
+  height: 100%;
 }
 
 .nav-button.active {
-  background-color: #555;
+  background-color: transparent; /* highlight sits underneath */
   color: white;
+}
+
+/* Sliding highlight for active tab */
+.nav-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #555;
+  border-radius: 999px;
+  transform: translateX(0);
+  width: 0;
+  transition: transform 200ms ease, width 200ms ease;
+  z-index: 0;
+}
+
+/* Raise buttons above the highlight */
+.nav-pills .nav-button {
+  position: relative;
+  z-index: 1;
 }
 
 .profile-pic {
@@ -62,22 +92,6 @@ body {
   color: #666;
 }
 
-/* Pill container */
-.profile-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;                 /* spacing between picture and text */
-  padding: 0.5rem 1rem;         /* internal padding */
-  background-color: #f7f7f7;    /* subtle neutral background */
-  border-radius: 999px;         /* fully rounded pill shape */
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.profile-pill:hover {
-  background-color: #ececec;
-}
 
 /* Profile picture stays circular */
 .profile-pic {
@@ -97,6 +111,118 @@ body {
 .profile-name {
   font-weight: 600;
   font-size: 0.9em;
+}
+
+/* Profile dropdown */
+.profile-area {
+  position: relative;
+  align-self: center;
+  margin-right: 40px;
+  width: 44px; /* Fix layout width so expanding pill doesn't move nav */
+  height: 44px; /* Ensure dropdown positions below, not over */
+  display: inline-block;
+}
+
+.profile-button {
+  height: 44px;
+  border-radius: 999px;
+  border: 2px solid #555;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* label grows from the left */
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, width 200ms ease;
+  width: 44px; /* collapsed */
+  overflow: hidden;
+  gap: 0;
+  position: absolute;
+  right: 0; /* expand leftwards inside fixed-width area */
+  top: 0; /* ensure perfectly centered within the 44px slot */
+  z-index: 2;
+  box-sizing: border-box; /* include border in width/height for perfect centering */
+  padding-left: 0; /* no left padding when collapsed */
+}
+
+.profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-button .profile-label {
+  opacity: 0;
+  white-space: nowrap;
+  color: #333;
+  font-size: 0.9rem;
+  padding-left: 0;
+  margin: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 150ms ease, max-width 200ms ease, padding-left 150ms ease;
+}
+
+.profile-button .profile-icon {
+  position: absolute;
+  right: 0; /* nudge further right */
+  top: 1px; /* slight upward adjustment */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-button.open {
+  width: 200px; /* expanded pill */
+  padding-left: 12px;
+  padding-right: 44px; /* reserve space so text never pushes icon */
+}
+
+.profile-button.open .profile-label {
+  opacity: 1;
+  max-width: 160px;
+  padding-left: 8px;
+}
+
+/* Ensure FA icon has no extra baseline space */
+.profile-button svg {
+  display: block;
+}
+
+.profile-menu {
+  position: absolute;
+  right: 0;
+  top: 52px; /* below the 44px button with some gap regardless of expanded width */
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  padding: 6px;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.profile-menu button {
+  width: 100%;
+  padding: 8px 10px;
+  background: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+.profile-menu button:hover {
+  background: #f5f5f5;
 }
 
 .profile-email {

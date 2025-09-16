@@ -11,12 +11,25 @@
   z-index: 999;
 }
 
+/* Ensure this specific modal can expand fully across the viewport */
+.add-client-modal {
+  align-items: flex-start;
+  padding: 2vh 1vw; /* give breathing room so extra wide modal fits */
+}
+
 .modal-content {
   background: white;
   padding: 2rem;
-  width: 400px;
   border-radius: 10px;
   position: relative;
+  box-sizing: border-box;
+}
+
+/* Strong, scoped width for Add Client modal only */
+.add-client-modal .modal-content,
+.add-client-modal-content {
+  width: 700px;
+  max-width: 95vw;
 }
 
 .modal-content h2 {
@@ -35,6 +48,51 @@
   width: 100%;
   padding: 0.5rem;
   margin-top: 0.25rem;
+}
+
+/* Make the brief textarea align down to lead source bottom */
+.brief-textarea {
+  min-height: 116px; /* approximate to align with lead source + potential referral input */
+}
+
+/* Two-column form layout */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.25rem 2.25rem;
+  align-items: start;
+}
+
+.form-col {
+  display: block;
+}
+
+.full-width-row {
+  grid-column: 1 / span 3;
+}
+
+/* Responsive: reduce columns on smaller viewports */
+@media (max-width: 980px) {
+  .modal-content {
+    width: 94vw;
+  }
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.5rem;
+  }
+  .full-width-row {
+    grid-column: 1 / span 2;
+  }
+}
+
+@media (max-width: 620px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+  .full-width-row {
+    grid-column: 1 / span 1;
+  }
 }
 
 .close-button {

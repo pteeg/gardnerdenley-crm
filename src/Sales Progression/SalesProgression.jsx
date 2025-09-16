@@ -1,16 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import StatusToggle from "./StatusToggle";
 import "./SalesProgression.css";
 import Sidebar from "../Sidebar";
 import ProfessionalChooserButton from "../ProfessionalChooserButton";
 import { v4 as uuidv4 } from "uuid";
 
+// Helper function to format client names
+function formatClientName(clientName, clients = []) {
+  // Find the client data to get spouse information
+  const client = clients.find(c => c.name === clientName || 
+    (c.spouse1FirstName && c.spouse1Surname && 
+     `${c.spouse1FirstName} and ${c.spouse2FirstName || c.spouse1FirstName} ${c.spouse1Surname}` === clientName));
+  
+  if (client && client.spouse1FirstName) {
+    if (client.spouse2FirstName) {
+      return `${client.spouse1FirstName} and ${client.spouse2FirstName}`;
+    }
+    return client.spouse1Surname ? `${client.spouse1FirstName} ${client.spouse1Surname}` : client.spouse1FirstName;
+  }
+  // Fallback to original client name
+  return clientName || "Unknown";
+}
+
 const SalesProgression = ({
   data,
   setData,
   markPropertyAsSold,
+  updateClientStatus,
   professionals: initialProfessionals = [],
-  setProfessionals: parentSetProfessionals
+  setProfessionals: parentSetProfessionals,
+  clients = [],
+  onRemoveRow,
+  properties = []
 }) => {
   // Local fallback if no professionals passed from parent
   const [localProfessionals, setLocalProfessionals] = useState(initialProfessionals);
@@ -28,6 +49,81 @@ const SalesProgression = ({
     ? initialProfessionals
     : localProfessionals;
   const setProfessionals = parentSetProfessionals || setLocalProfessionals;
+
+  const handleFeePercentChange = async (rowIndex, inputValue) => {
+    const numericString = String(inputValue).replace(/[^0-9.]/g, "");
+
+    const currentData = showCompleted ? completedDeals : activeDeals;
+    const row = currentData[rowIndex];
+    if (!row) return;
+
+    // Allow empty string while typing
+    if (numericString === "") {
+      if (row?.id && row.id !== "Not Done") {
+        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+        await updateSalesProgressionById(row.id, { feePercent: "" });
+      }
+      return;
+    }
+
+    // Allow trailing decimal like "1."
+    if (/^\d+\.$/.test(numericString)) {
+      if (row?.id && row.id !== "Not Done") {
+        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+        await updateSalesProgressionById(row.id, { feePercent: numericString });
+      }
+      return;
+    }
+
+    const parsedNumber = Math.min(100, Math.max(0, parseFloat(numericString)));
+
+    if (row?.id && row.id !== "Not Done") {
+      try {
+        const property = properties.find(p => p.name === row.address);
+        let computedInvoice = row.invoiceAmount || "";
+        if (property && property.offerStatus === "Accepted" && property.offerAmount && !Number.isNaN(parsedNumber)) {
+          computedInvoice = Math.round(Number(property.offerAmount) * (parsedNumber / 100));
+        }
+        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+        await updateSalesProgressionById(row.id, { feePercent: parsedNumber, invoiceAmount: computedInvoice });
+      } catch (e) {
+        console.error("Error updating fee percent:", e);
+      }
+    } else {
+      console.warn("Cannot update fee percent - no valid document ID");
+    }
+  };
+
+  // Initialize default fee percent and invoice amount from accepted offer
+  useEffect(() => {
+    const init = async () => {
+      const currentData = showCompleted ? completedDeals : activeDeals;
+      const updates = [];
+      for (const row of currentData) {
+        if (!row?.id || row.id === "Not Done") continue;
+        // Only treat fee as missing if it's truly undefined or null (not empty string while the user edits)
+        const hasFee = row.feePercent !== undefined && row.feePercent !== null;
+        const property = properties.find(p => p.name === row.address);
+        const canCompute = property && property.offerStatus === "Accepted" && property.offerAmount;
+        if (!hasFee || (canCompute && (row.invoiceAmount === undefined || row.invoiceAmount === null))) {
+          const fee = hasFee ? Number(row.feePercent) : 1.5;
+          const computedInvoice = canCompute ? Math.round(Number(property.offerAmount) * (fee / 100)) : row.invoiceAmount;
+          const payload = { };
+          if (!hasFee) payload.feePercent = fee;
+          if (canCompute && computedInvoice !== undefined && computedInvoice !== null) payload.invoiceAmount = computedInvoice;
+          if (Object.keys(payload).length > 0) {
+            updates.push({ id: row.id, payload });
+          }
+        }
+      }
+      if (updates.length > 0) {
+        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+        await Promise.all(updates.map(u => updateSalesProgressionById(u.id, u.payload)));
+      }
+    };
+    init();
+    // We intentionally depend on data/properties/showCompleted to re-check when these change
+  }, [data, properties, showCompleted]);
 
   const handleStatusChange = async (rowIndex, field, newValue) => {
     console.log(`handleStatusChange called: field=${field}, rowIndex=${rowIndex}, newValue=${newValue}`);
@@ -56,6 +152,14 @@ const SalesProgression = ({
     if (field === "exchanged" && newValue === "Done") {
       const propertyName = currentData[rowIndex].address;
       await markPropertyAsSold(propertyName);
+    }
+
+    // Update client status to Complete when deal is completed
+    if (field === "dealComplete" && newValue === true) {
+      const clientName = currentData[rowIndex].client;
+      if (updateClientStatus) {
+        await updateClientStatus(clientName, "Complete");
+      }
     }
   };
 
@@ -96,10 +200,10 @@ const SalesProgression = ({
     <div className="sales-progression">
       <div className="sales-progression-body">
         <Sidebar
-          title="Sales Progression"
+          title="Sales Prog."
           items={[
-            { key: "active", label: "Active Deals", icon: "📈", active: !showCompleted, onClick: () => setShowCompleted(false) },
-            { key: "completed", label: "Completed Deals", icon: "✅", active: showCompleted, onClick: () => setShowCompleted(true) },
+            { key: "active", label: "Active Deals", active: !showCompleted, onClick: () => setShowCompleted(false) },
+            { key: "completed", label: "Completed Deals", active: showCompleted, onClick: () => setShowCompleted(true) },
           ]}
         />
         <div className="sales-progression-content">
@@ -108,7 +212,7 @@ const SalesProgression = ({
           <thead>
             <tr>
               <th>Client</th>
-              <th>Property Address</th>
+              <th>Property</th>
               <th>Contract Sent</th>
               <th>Contract Signed</th>
               <th>Client ID Sent</th>
@@ -133,6 +237,7 @@ const SalesProgression = ({
               <th>Invoice Sent?</th>
               <th>Invoice Paid?</th>
               <th>Payment Expected</th>
+              <th>Fee %</th>
               <th>Invoice Amount</th>
               <th>Deal Complete</th>
             </tr>
@@ -140,7 +245,7 @@ const SalesProgression = ({
           <tbody>
             {(showCompleted ? completedDeals : activeDeals).map((row, rowIndex) => (
               <tr key={rowIndex}>
-                <td>{row.client}</td>
+                <td>{formatClientName(row.client, clients)}</td>
                 <td>{row.address}</td>
 
                 {/* Contract & ID */}
@@ -390,6 +495,19 @@ const SalesProgression = ({
                     onChange={(e) =>
                       handleInputChange(rowIndex, "paymentExpected", e.target.value)
                     }
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    value={
+                      row.feePercent === "" || row.feePercent === undefined || row.feePercent === null
+                        ? ""
+                        : `${row.feePercent}`
+                    }
+                    onChange={(e) => handleFeePercentChange(rowIndex, e.target.value)}
+                    placeholder="1.5%"
+                    style={{ width: "80px" }}
                   />
                 </td>
                 <td className="currency-input">

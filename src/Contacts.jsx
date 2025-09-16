@@ -14,10 +14,12 @@ function Contacts({
   setProfessionals,
   properties,
   setProperties,
+  salesProgressions,
   setSalesProgressions,
   clients,
   setClients,
   removeSalesProgressionRow,
+  markPropertyAsMatched,
   // ✅ NEW: receive helper from App.jsx
   createNewSalesProgression
 }) {
@@ -33,8 +35,50 @@ function Contacts({
     if (clientToArchive.id) {
       const { archiveClientById } = await import("./lib/clientsApi");
       await archiveClientById(clientToArchive.id);
+      
+      // Reset property statuses back to market status
+      await resetLinkedPropertiesStatus(clientToArchive.name);
     }
     setSelectedClient(null);
+  };
+
+  const handleDeleteClient = async (clientToDelete) => {
+    if (clientToDelete.id) {
+      const { deleteClientById } = await import("./lib/clientsApi");
+      await deleteClientById(clientToDelete.id);
+      
+      // Reset property statuses back to market status
+      await resetLinkedPropertiesStatus(clientToDelete.name);
+    }
+    setSelectedClient(null);
+  };
+
+  const resetLinkedPropertiesStatus = async (clientName) => {
+    // Find all properties linked to this client
+    const linkedProperties = properties.filter(property => 
+      (property.linkedClients && property.linkedClients.includes(clientName)) ||
+      property.linkedClient === clientName
+    );
+
+    // Reset each property's status back to its original market status
+    for (const property of linkedProperties) {
+      if (property.id) {
+        const { updatePropertyById } = await import("./lib/propertiesApi");
+        
+        // Use the stored original market status, or default to "On Market"
+        const marketStatus = property.originalMarketStatus || "On Market";
+        
+        // Remove client from linkedClients array and reset status
+        const updatedLinkedClients = (property.linkedClients || []).filter(name => name !== clientName);
+        
+        await updatePropertyById(property.id, {
+          status: marketStatus,
+          linkedClients: updatedLinkedClients,
+          linkedClient: updatedLinkedClients.length > 0 ? updatedLinkedClients[0] : null,
+          offerStatus: "None"
+        });
+      }
+    }
   };
 
   const handleRestoreClient = async (clientToRestore) => {
@@ -50,6 +94,8 @@ function Contacts({
     if (target?.id) {
       const { updateClientById } = await import("./lib/clientsApi");
       await updateClientById(target.id, { status: newStatus, archived: false });
+      // Optimistically update local state so UI reflects immediately
+      setClients(prev => prev.map(c => c.id === target.id ? { ...c, status: newStatus, archived: false } : c));
     }
   };
 
@@ -57,8 +103,23 @@ function Contacts({
     const property = properties.find(p => p.name === propertyName);
     if (property?.id) {
       const { updatePropertyById } = await import("./lib/propertiesApi");
+      // Build offers history updates
+      let offers = Array.isArray(property.offers) ? [...property.offers] : [];
+      let offersChanged = false;
+      if (update.appendOffer) {
+        offers.push(update.appendOffer);
+        offersChanged = true;
+      }
+      if (update.setLastOfferStatus && offers.length > 0) {
+        offers[offers.length - 1] = {
+          ...offers[offers.length - 1],
+          status: update.setLastOfferStatus
+        };
+        offersChanged = true;
+      }
       const updates = {
         ...update,
+        ...(offersChanged ? { offers } : {}),
         ...(update.offerStatus === "Accepted" ? { status: "Matched" } : {})
       };
       await updatePropertyById(property.id, updates);
@@ -102,7 +163,7 @@ function Contacts({
   const handleAcceptOffer = async (clientName, propertyName) => {
     await createNewSalesProgression(clientName, propertyName);
     await markPropertyAsMatched(propertyName);
-    await updateClientInfo(clientName, { status: "Offer Accepted" });
+    await updateClientStatus(clientName, "Matched");
   };
 
   const handleCancelMatch = async (clientName, propertyName) => {
@@ -156,27 +217,23 @@ function Contacts({
 
   return (
     <div className="contacts-container">
-      {!selectedClient && !selectedProfessional && (
-        <Sidebar
-          title="Contacts"
-          items={[
-            {
-              key: "clients",
-              label: "Clients",
-              icon: "👤",
-              active: subPage === "Clients",
-              onClick: () => setSubPage("Clients"),
-            },
-            {
-              key: "professionals",
-              label: "Professionals",
-              icon: "👤",
-              active: subPage === "Professionals",
-              onClick: () => setSubPage("Professionals"),
-            },
-          ]}
-        />
-      )}
+      <Sidebar
+        title="Contacts"
+        items={[
+          {
+            key: "clients",
+            label: "Clients",
+            active: subPage === "Clients",
+            onClick: () => setSubPage("Clients"),
+          },
+          {
+            key: "professionals",
+            label: "Professionals",
+            active: subPage === "Professionals",
+            onClick: () => setSubPage("Professionals"),
+          },
+        ]}
+      />
 
       <div className="contacts-main">
         {subPage === "Clients" && !selectedClient && (
@@ -210,11 +267,31 @@ function Contacts({
             updateClientProperties={updateClientProperties}
             setProperties={setProperties}
             allProperties={properties}
-            updatePropertyLinkage={async (propertyName, clientName) => {
+            updatePropertyLinkage={async (propertyName, clientData) => {
               const property = properties.find(p => p.name === propertyName);
               if (property?.id) {
                 const { updatePropertyById } = await import("./lib/propertiesApi");
-                await updatePropertyById(property.id, { linkedClient: clientName });
+                
+                // Store original market status if not already stored
+                const originalMarketStatus = property.originalMarketStatus || property.status;
+                
+                // Handle both old single linkedClient and new linkedClients array
+                if (Array.isArray(clientData)) {
+                  await updatePropertyById(property.id, { 
+                    linkedClients: clientData,
+                    linkedClient: clientData.length > 0 ? clientData[0] : null, // keep first client for backward compatibility
+                    originalMarketStatus: originalMarketStatus,
+                    ...(clientData.length === 0 ? { offerStatus: "None", offerAmount: null, status: originalMarketStatus || "On Market" } : {})
+                  });
+                } else {
+                  // Legacy single client linking
+                  await updatePropertyById(property.id, { 
+                    linkedClient: clientData,
+                    linkedClients: clientData ? [clientData] : [],
+                    originalMarketStatus: originalMarketStatus,
+                    ...(clientData ? {} : { offerStatus: "None", offerAmount: null, status: originalMarketStatus || "On Market" })
+                  });
+                }
               }
             }}
             handleAcceptOffer={handleAcceptOffer}
@@ -222,6 +299,9 @@ function Contacts({
             removeSalesProgressionRow={removeSalesProgressionRow}
             handleCancelMatch={handleCancelMatch}
             updateClientInfo={updateClientInfo}
+            onArchiveClient={handleArchiveClient}
+            onDeleteClient={handleDeleteClient}
+            professionals={professionals}
           />
         )}
 
@@ -249,6 +329,8 @@ function Contacts({
           <ProfessionalPage
             professional={selectedProfessional}
             onBack={() => setSelectedProfessional(null)}
+            properties={properties}
+            salesProgressions={salesProgressions}
           />
         )}
       </div>
