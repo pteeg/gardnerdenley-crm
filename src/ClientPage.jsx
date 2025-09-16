@@ -360,18 +360,19 @@ function ClientPage({
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Edit Client</h3>
-            <AddClientForm
-              initialData={editedClient}
-              onSubmit={handleSaveEdit}
-              onCancel={handleCancelEdit}
-              isEditing={true}
-              onInputChange={handleEditInputChange}
-            />
-          </div>
-        </div>
+        <AddClientForm
+          initialData={editedClient}
+          onSave={async (updatedClient) => {
+            try {
+              await updateClientInfo(client.id, updatedClient);
+              setShowEditModal(false);
+            } catch (error) {
+              console.error('Error updating client:', error);
+            }
+          }}
+          onClose={handleCancelEdit}
+          isEdit={true}
+        />
       )}
 
       {/* Offer Modal */}
