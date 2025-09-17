@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import './PropertiesPage.css';
 import Sidebar from './Sidebar';
 import NewPropertyModal from './NewPropertyModal';
@@ -17,6 +17,14 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
     if (selectedFilter === 'sold') return property.status === "Sold" && !property.archived;
     return !property.archived; // "all" = not archived
   });
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const visibleProperties = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return filteredProperties;
+    return filteredProperties.filter((p) => (p.name || "").toLowerCase().includes(term));
+  }, [filteredProperties, searchTerm]);
 
   const handleFilterClick = (filter) => {
     setSelectedFilter(filter);
@@ -95,6 +103,14 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
             <div className="properties-header">
               <h2>{getPageTitle()}</h2>
               <div className="table-actions">
+                <input
+                  type="text"
+                  placeholder="Search properties..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="table-search-input"
+                  aria-label="Search properties"
+                />
                 {!showArchived && (
                   <button className="new-client-btn" onClick={() => setIsAdding(true)}>+ Add Property</button>
                 )}
@@ -108,17 +124,17 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Brief</th>
+                  <th>Description</th>
                   <th>Guide Price</th>
                   <th>Status</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {filteredProperties.map(property => (
+                {visibleProperties.map(property => (
                   <tr key={property.id}>
                     <td onClick={() => handleRowClick(property)}>{property.name}</td>
-                    <td onClick={() => handleRowClick(property)}>{property.brief}</td>
+                    <td onClick={() => handleRowClick(property)}>{property.description}</td>
                     <td onClick={() => handleRowClick(property)}>{property.price ? `£${Number(property.price).toLocaleString()}` : ''}</td>
                     <td onClick={() => handleRowClick(property)}>{property.status}</td>
                     <td>

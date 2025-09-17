@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import "./ProfessionalsTable.css";
 
 function ProfessionalsTable({ 
@@ -10,11 +10,27 @@ function ProfessionalsTable({
   onRowClick, 
   onAddProfessional
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProfessionals = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return professionals;
+    return professionals.filter((p) => (p.name || "").toLowerCase().includes(term));
+  }, [professionals, searchTerm]);
+
   return (
     <div className="professionals-table-container">
       <div className="table-header">
         <h2>{showArchived ? "Archived Professionals" : "Active Professionals"}</h2>
         <div className="table-actions">
+          <input
+            type="text"
+            placeholder="Search professionals..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="table-search-input"
+            aria-label="Search professionals"
+          />
           {!showArchived && (
             <button onClick={onAddProfessional} className="add-btn">
               + New Professional
@@ -38,7 +54,7 @@ function ProfessionalsTable({
           </tr>
         </thead>
         <tbody>
-          {professionals.map((professional, index) => (
+          {filteredProfessionals.map((professional, index) => (
             <tr key={index} onClick={() => onRowClick(professional)} className="clickable-row">
               <td>{professional.name}</td>
               <td>{professional.company}</td>

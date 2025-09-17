@@ -27,7 +27,8 @@
 
 .modal-content h2 {
   margin-top: 0;
-  color: #043161;
+  color: #555555;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .property-form {
@@ -51,7 +52,7 @@
   font-size: 0.95rem;
   cursor: pointer;
 }
-.market-option.active { background: #043161; color: #fff; border-color: #043161; }
+.market-option.active { background: #555555; color: #fff; border-color: #555555; }
 
 /* Vendor type buttons */
 .vendor-group { display: inline-flex; gap: 6px; }
@@ -64,13 +65,14 @@
   font-size: 0.95rem;
   cursor: pointer;
 }
-.vendor-option.active { background: #043161; color: #fff; border-color: #043161; }
+.vendor-option.active { background: #555555; color: #fff; border-color: #555555; }
 
 .form-group label {
   display: block;
   font-weight: bold;
   margin-bottom: 0.15rem;
-  color: #043161;
+  color: #555555;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .form-group input,
@@ -117,12 +119,7 @@
   margin-bottom: 1rem;
 }
 
-.form-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
+/* Save button row uses full width area at bottom like Add Client modal */
 
 .full-width-row {
   grid-column: 1 / span 5;
@@ -145,23 +142,22 @@
   .full-width-row { grid-column: 1 / span 1; }
 }
 
-.cancel-btn,
-.save-btn {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.cancel-btn {
-  background-color: #ccc;
-  color: #333;
-}
-
-.save-btn {
-  background-color: #043161;
+/* New unified save button style */
+.save-button {
+  margin-top: 0.5rem;
+  background: #555555;
   color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 8px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.save-button:hover {
+  background: #444444;
 }
 
 /* Ensure New Property modal width overrides any global modal-content rules */
@@ -169,4 +165,16 @@
   width: 90vw !important;
   max-width: 1600px !important;
   overflow-x: hidden;
+}
+
+/* Top-right close button like Add Client modal */
+.close-button {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #555555;
 }

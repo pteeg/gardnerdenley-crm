@@ -97,6 +97,7 @@ const NewPropertyModal = ({ onClose, onSave, professionals, initialData = null, 
   return (
     <div className="modal-overlay new-property-modal">
       <div className="modal-content">
+        <button className="close-button" type="button" onClick={onClose}>×</button>
         <h2>{isEdit ? "Edit Property" : "Add Property"}</h2>
         <form onSubmit={handleSubmit} className="property-form">
           <div className="form-group"><label>Name *</label><input name="name" value={formData.name} onChange={handleChange} required /></div>
@@ -183,9 +184,8 @@ const NewPropertyModal = ({ onClose, onSave, professionals, initialData = null, 
           <div className="form-group"><label>Floorplan (PDF/Image)</label><input type="file" accept=".pdf,image/*" disabled /></div>
           <div className="form-group"><label>EPC (PDF/Image)</label><input type="file" accept=".pdf,image/*" disabled /></div>
 
-          <div className="form-buttons full-width-row">
-            <button type="button" className="cancel-btn" onClick={onClose}>Cancel</button>
-            <button type="submit" className="save-btn">Save</button>
+          <div className="full-width-row">
+            <button type="submit" className="save-button">Save</button>
           </div>
         </form>
       </div>

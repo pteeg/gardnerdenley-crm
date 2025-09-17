@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import "./ClientsTable.css";
 
 // Helper function to format client names
@@ -24,11 +24,38 @@ function ClientsTable({
   showArchived, 
   onRowClick 
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredClients = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return clients;
+    return clients.filter((c) => {
+      // Build a name string similar to display logic
+      let name = "";
+      if (c.spouse1FirstName && c.spouse2FirstName) {
+        name = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+      } else if (c.spouse1FirstName || c.spouse1Surname) {
+        name = [c.spouse1FirstName || "", c.spouse1Surname || ""].filter(Boolean).join(" ");
+      } else {
+        name = c.name || "";
+      }
+      return name.toLowerCase().includes(term);
+    });
+  }, [clients, searchTerm]);
+
   return (
     <div className="clients-table-container">
       <div className="table-header">
         <h2>{showArchived ? "Archived Clients" : "Active Clients"}</h2>
         <div className="table-actions">
+          <input
+            type="text"
+            placeholder="Search clients..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="table-search-input"
+            aria-label="Search clients"
+          />
           {!showArchived && (
             <button onClick={onNewClientClick} className="new-client-btn">
               + New Client
@@ -52,7 +79,7 @@ function ClientsTable({
           </tr>
         </thead>
         <tbody>
-          {clients.map((client, index) => (
+          {filteredClients.map((client, index) => (
             <tr key={index} onClick={() => onRowClick(client)} className="clickable-row">
               <td>{formatClientName(client)}</td>
               <td>
