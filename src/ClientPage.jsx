@@ -118,7 +118,7 @@ function ClientPage({
 
   const handleSaveEdit = async () => {
     try {
-      await updateClientInfo(client.id, editedClient);
+      await updateClientInfo(client.name, editedClient);
       setShowEditModal(false);
     } catch (error) {
       console.error('Error updating client:', error);
@@ -364,7 +364,7 @@ function ClientPage({
           initialData={editedClient}
           onSave={async (updatedClient) => {
             try {
-              await updateClientInfo(client.id, updatedClient);
+              await updateClientInfo(client.name, updatedClient);
               setShowEditModal(false);
             } catch (error) {
               console.error('Error updating client:', error);

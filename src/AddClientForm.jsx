@@ -67,118 +67,148 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
       <div className="modal-content add-client-modal-content">
         <button className="close-button" onClick={onClose}>×</button>
         <h2>{isEdit ? "Edit Client" : "New Client"}</h2>
-        <div className="form-grid">
-          {/* Left column: client details */}
-          <div className="form-col">
-            <label>Spouse 1 First Name *</label>
-            <input 
-              name="spouse1FirstName" 
-              value={client.spouse1FirstName} 
-              onChange={handleChange} 
-            />
-
-            <label>Spouse 1 Surname</label>
-            <input 
-              name="spouse1Surname" 
-              value={client.spouse1Surname} 
-              onChange={handleChange} 
-            />
-
-            <label>Phone</label>
-            <input name="phoneNumber" value={client.phoneNumber} onChange={handleChange} />
-
-            <label>Email</label>
-            <input name="email" type="email" value={client.email} onChange={handleChange} />
-
-            <label>Lead Source</label>
-            <select 
-              name="clientSource" 
-              value={client.clientSource} 
-              onChange={handleChange}
-            >
-              <option value="">Select source...</option>
-              <option value="Website">Website</option>
-              <option value="Referral">Referral</option>
-              <option value="Search Engine">Search Engine</option>
-              <option value="AI (Chat GPT)">AI (Chat GPT)</option>
-              <option value="Social Media">Social Media</option>
-            </select>
-
-            {client.clientSource === "Referral" && (
-              <>
-                <label>Referral Contact (client/professional)</label>
+        <div className="tiles">
+          {/* Contact Details Tile */}
+          <div className="tile tile-contact">
+            <h3 className="tile-title">Contact Details</h3>
+            <div className="tile-grid">
+              <div className="tile-subtitle">Primary Client</div>
+              <div className="tile-field">
                 <input
-                  name="referralContact"
-                  value={client.referralContact}
+                  name="spouse1FirstName"
+                  value={client.spouse1FirstName}
                   onChange={handleChange}
-                  placeholder="Start typing a name..."
+                  placeholder="First Name *"
+                  required
                 />
-              </>
-            )}
+              </div>
+              <div className="tile-field">
+                <input
+                  name="spouse1Surname"
+                  value={client.spouse1Surname}
+                  onChange={handleChange}
+                  placeholder="Surname"
+                />
+              </div>
+              <div className="tile-field">
+                <input
+                  name="phoneNumber"
+                  value={client.phoneNumber}
+                  onChange={handleChange}
+                  placeholder="Phone"
+                />
+              </div>
+              <div className="tile-field">
+                <input
+                  name="email"
+                  type="email"
+                  value={client.email}
+                  onChange={handleChange}
+                  placeholder="Email"
+                />
+              </div>
+              <div className="tile-subtitle">Spouse</div>
+              <div className="tile-field">
+                <input
+                  name="spouse2FirstName"
+                  value={client.spouse2FirstName}
+                  onChange={handleChange}
+                  placeholder="First Name"
+                />
+              </div>
+              <div className="tile-field">
+                <input
+                  name="spouse2Surname"
+                  value={client.spouse2Surname}
+                  onChange={handleChange}
+                  placeholder="Surname"
+                />
+              </div>
+              
+            </div>
           </div>
 
-          {/* Middle column: spouse 2 + brief + budget */}
-          <div className="form-col">
-            <label>Spouse 2 First Name</label>
-            <input 
-              name="spouse2FirstName" 
-              value={client.spouse2FirstName} 
-              onChange={handleChange} 
-            />
-
-            <label>Spouse 2 Surname</label>
-            <input 
-              name="spouse2Surname" 
-              value={client.spouse2Surname} 
-              onChange={handleChange} 
-            />
-
-            <label>Brief</label>
-            <textarea className="brief-textarea" name="brief" value={client.brief} onChange={handleChange} />
+          {/* Middle column stack: Financials + Lead Source */}
+          <div className="tile-middle-col">
+            <div className="tile tile-middle financials">
+              <h3 className="tile-title">Financials</h3>
+              <div className="tile-grid single">
+                <div className="tile-field">
+                  <input name="maxBudget" value={client.maxBudget} onChange={handleChange} placeholder="Max Budget" />
+                </div>
+                <div className="tile-field">
+                  <select name="positionFunding" value={client.positionFunding} onChange={handleChange} aria-label="Position (funding)">
+                    <option value="">Select Position</option>
+                    <option value="Cash and Mortgage">Cash and Mortgage</option>
+                    <option value="Cash">Cash</option>
+                  </select>
+                </div>
+                <div className="tile-field">
+                  <select name="disposal" value={client.disposal} onChange={handleChange} aria-label="Disposal">
+                    <option value="">Select Disposal</option>
+                    <option value="NTS">NTS</option>
+                    <option value="FTB">FTB</option>
+                    <option value="STS">STS</option>
+                    <option value="STS OTM">STS OTM</option>
+                    <option value="STS OTM OOA">STS OTM OOA</option>
+                    <option value="SSTC">SSTC</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="tile tile-middle lead">
+              <h3 className="tile-title">Lead Source</h3>
+              <div className="tile-grid single">
+                <div className="tile-field" style={{ gridColumn: '1 / -1' }}>
+                  <select
+                    name="clientSource"
+                    value={client.clientSource}
+                    onChange={handleChange}
+                    aria-label="Lead Source"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="">Select Source</option>
+                    <option value="Website">Website</option>
+                    <option value="Referral">Referral</option>
+                    <option value="Search Engine">Search Engine</option>
+                    <option value="AI (Chat GPT)">AI (Chat GPT)</option>
+                    <option value="Social Media">Social Media</option>
+                  </select>
+                </div>
+                {client.clientSource === "Referral" && (
+                  <div className="tile-field" style={{ gridColumn: '1 / -1' }}>
+                    <input
+                      name="referralContact"
+                      value={client.referralContact}
+                      onChange={handleChange}
+                      placeholder="Referral Contact (client/professional)"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Right column: position/disposal/search date */}
-          <div className="form-col">
-            <label>Position (funding)</label>
-            <select
-              name="positionFunding"
-              value={client.positionFunding}
-              onChange={handleChange}
-            >
-              <option value="">Select position...</option>
-              <option value="Cash and Mortgage">Cash and Mortgage</option>
-              <option value="Cash">Cash</option>
-            </select>
-
-            <label>Disposal</label>
-            <select 
-              name="disposal" 
-              value={client.disposal} 
-              onChange={handleChange}
-            >
-              <option value="">Select disposal...</option>
-              <option value="NTS">NTS</option>
-              <option value="FTB">FTB</option>
-              <option value="STS">STS</option>
-              <option value="STS OTM">STS OTM</option>
-              <option value="STS OTM OOA">STS OTM OOA</option>
-              <option value="SSTC">SSTC</option>
-            </select>
-
-            <label>Search Start Date</label>
-            <input
-              type="date"
-              name="searchStartDate"
-              value={client.searchStartDate}
-              onChange={handleChange}
-            />
-
-            <label>Max Budget</label>
-            <input
-              name="maxBudget"
-              value={client.maxBudget}
-              onChange={handleChange}
-            />
+          {/* Right column: Search Details (Brief + Search Date) */}
+          <div className="tile-right-col">
+            <div className="tile tile-right search-details">
+              <h3 className="tile-title">Search Details</h3>
+              <div className="tile-grid single">
+                <div className="tile-field" style={{ gridColumn: '1 / -1' }}>
+                  <textarea className="brief-textarea" name="brief" value={client.brief} onChange={handleChange} placeholder="Brief" />
+                </div>
+                <div className="tile-field" style={{ gridColumn: '1 / -1' }}>
+                  <label>Search Start Date</label>
+                  <input
+                    type="date"
+                    name="searchStartDate"
+                    value={client.searchStartDate}
+                    onChange={handleChange}
+                    placeholder="Search Start Date"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="full-width-row">
