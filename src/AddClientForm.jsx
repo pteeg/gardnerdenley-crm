@@ -165,7 +165,7 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
           {/* Middle column stack: Financials + Lead Source */}
           <div className="tile-middle-col">
             <div className="tile tile-middle financials">
-              <h3 className="tile-title">Financials</h3>
+              <h3 className="tile-title">Buying Position</h3>
               <div className="tile-grid single">
                 <div className="tile-field">
                   <input name="maxBudget" value={client.maxBudget} onChange={handleChange} placeholder="Max Budget" />
