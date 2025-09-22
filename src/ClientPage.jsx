@@ -18,6 +18,7 @@ function ClientPage({
   updateClientInfo,
   allProperties,
   salesProgressions = [],
+  allClients = [],
   updatePropertyLinkage,
   updatePropertyOffer,
   removeSalesProgressionRow,
@@ -54,6 +55,10 @@ function ClientPage({
   const [showNewPropertyModal, setShowNewPropertyModal] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState("");
+  const [showAssociateModal, setShowAssociateModal] = useState(false);
+  const [associateSearch, setAssociateSearch] = useState("");
+  const [selectedAssociate, setSelectedAssociate] = useState(null);
+  const [associateRelation, setAssociateRelation] = useState("");
 
   const [editedClient, setEditedClient] = useState(client);
   const [originalName, setOriginalName] = useState(client?.name || "");
@@ -128,6 +133,19 @@ function ClientPage({
     }
   };
 
+  const formatListName = (c) => {
+    if (!c) return "";
+    if (c.spouse1FirstName && c.spouse2FirstName) {
+      return c.spouse1Surname
+        ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+        : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+    }
+    if (c.spouse1FirstName || c.spouse1Surname) {
+      return [c.spouse1FirstName || "", c.spouse1Surname || ""].filter(Boolean).join(" ");
+    }
+    return c.name || "";
+  };
+
   const handleCancelEdit = () => {
     setEditedClient(client);
     setOriginalName(client?.name || "");
@@ -176,13 +194,23 @@ function ClientPage({
             <h2 className="card-title">Contact Details</h2>
             <div className="contact-info">
               <div className="contact-item">
-                <span className="contact-label">Primary Contact</span>
-                <span className="contact-value">{[client.spouse1FirstName, client.spouse1Surname].filter(Boolean).join(" ") || "Not provided"}</span>
+              <span className="contact-label">Primary Client</span>
+              <span className="contact-value">{
+                (() => {
+                  const namePart = [client.spouse1FirstName, client.spouse1Surname].filter(Boolean).join(" ");
+                  const titled = [client.spouse1Title, namePart].filter(Boolean).join(" ");
+                  return titled || "Not provided";
+                })()
+              }</span>
               </div>
-              {client.spouse2FirstName || client.spouse2Surname ? (
+            {client.spouse2FirstName || client.spouse2Surname ? (
                 <div className="contact-item">
-                  <span className="contact-label">Secondary Contact</span>
-                  <span className="contact-value">{[client.spouse2FirstName, client.spouse2Surname].filter(Boolean).join(" ")}</span>
+                <span className="contact-label">Spouse</span>
+                <span className="contact-value">{
+                  [client.spouse2Title, [client.spouse2FirstName, client.spouse2Surname].filter(Boolean).join(" ")]
+                    .filter(Boolean)
+                    .join(" ")
+                }</span>
                 </div>
               ) : null}
               <div className="contact-item">
@@ -358,6 +386,41 @@ function ClientPage({
               })}
             </div>
           </div>
+
+          {/* Associated Contacts */}
+          <div className="client-card">
+            <h2 className="card-title">Link Associated Contact Record</h2>
+            <button
+              onClick={() => { setShowAssociateModal(true); setAssociateSearch(""); setSelectedAssociate(null); setAssociateRelation(""); }}
+              className="add-property-btn"
+            >
+              + Add Link
+            </button>
+
+            <div className="property-cards">
+              {(client.associatedContacts || []).map((ac, idx) => (
+                <div key={idx} className="prospective-property-card">
+                  <div className="property-main-info">
+                    <h4>{formatListName(ac.client)}</h4>
+                    {ac.relation ? (
+                      <p className="property-price">{ac.relation}</p>
+                    ) : null}
+                  </div>
+                  <div className="property-actions">
+                    <button
+                      className="remove-btn"
+                      onClick={async () => {
+                        const list = Array.isArray(client.associatedContacts) ? client.associatedContacts.filter((_, i) => i !== idx) : [];
+                        await updateClientInfo(client.name, { associatedContacts: list });
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -456,6 +519,72 @@ function ClientPage({
                 Save
               </button>
               <button onClick={() => { setShowNoteModal(false); setNoteText(""); }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Associate Contact Modal */}
+      {showAssociateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Link Associated Contact</h3>
+            <div className="form-group">
+              <label>Search Contact</label>
+              <input
+                type="text"
+                placeholder="Type to search..."
+                value={associateSearch}
+                onChange={(e) => { setAssociateSearch(e.target.value); setSelectedAssociate(null); }}
+              />
+            </div>
+            <div className="table-container" style={{ maxHeight: '200px', overflowY: 'auto', marginTop: '8px' }}>
+              {associateSearch.trim() ? (
+                <table className="wonga-table">
+                  <tbody>
+                    {allClients
+                      .filter(c => c.name !== client.name)
+                      .filter(c => formatListName(c).toLowerCase().includes(associateSearch.trim().toLowerCase()))
+                      .slice(0, 20)
+                      .map((c, i) => (
+                        <tr key={i} className="clickable-row" onClick={() => setSelectedAssociate(c)}>
+                          <td>{formatListName(c)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              ) : null}
+            </div>
+
+            {selectedAssociate && (
+              <div className="form-group" style={{ marginTop: '8px' }}>
+                <label>Relationship</label>
+                <input
+                  type="text"
+                  placeholder="Describe the relationship"
+                  value={associateRelation}
+                  onChange={(e) => setAssociateRelation(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="modal-buttons">
+              <button
+                onClick={async () => {
+                  if (!selectedAssociate) return;
+                  const entry = { client: selectedAssociate, relation: associateRelation.trim() };
+                  const list = Array.isArray(client.associatedContacts) ? [...client.associatedContacts, entry] : [entry];
+                  await updateClientInfo(client.name, { associatedContacts: list });
+                  setShowAssociateModal(false);
+                  setAssociateSearch("");
+                  setSelectedAssociate(null);
+                  setAssociateRelation("");
+                }}
+                disabled={!selectedAssociate}
+              >
+                Add
+              </button>
+              <button onClick={() => { setShowAssociateModal(false); setAssociateSearch(""); setSelectedAssociate(null); setAssociateRelation(""); }}>Cancel</button>
             </div>
           </div>
         </div>

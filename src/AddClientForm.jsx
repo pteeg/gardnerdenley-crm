@@ -14,8 +14,10 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
       brief: initialData.brief || "",
       maxBudget: formattedBudget,
       status: initialData.status || "Searching",
+      spouse1Title: initialData.spouse1Title || "",
       spouse1FirstName: initialData.spouse1FirstName || "",
       spouse1Surname: initialData.spouse1Surname || "",
+      spouse2Title: initialData.spouse2Title || "",
       spouse2FirstName: initialData.spouse2FirstName || "",
       spouse2Surname: initialData.spouse2Surname || "",
       clientSource: initialData.clientSource || "",
@@ -73,6 +75,22 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
             <h3 className="tile-title">Contact Details</h3>
             <div className="tile-grid">
               <div className="tile-subtitle">Primary Client</div>
+            <div className="tile-field">
+              <select
+                name="spouse1Title"
+                value={client.spouse1Title}
+                onChange={handleChange}
+                aria-label="Primary title"
+              >
+                <option value="">Title</option>
+                <option value="Mr">Mr</option>
+                <option value="Mrs">Mrs</option>
+                <option value="Miss">Miss</option>
+                <option value="Master">Master</option>
+                <option value="Sir">Sir</option>
+                <option value="Lord">Lord</option>
+              </select>
+            </div>
               <div className="tile-field">
                 <input
                   name="spouse1FirstName"
@@ -108,6 +126,22 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
                 />
               </div>
               <div className="tile-subtitle">Spouse</div>
+            <div className="tile-field">
+              <select
+                name="spouse2Title"
+                value={client.spouse2Title}
+                onChange={handleChange}
+                aria-label="Spouse title"
+              >
+                <option value="">Title</option>
+                <option value="Mr">Mr</option>
+                <option value="Mrs">Mrs</option>
+                <option value="Miss">Miss</option>
+                <option value="Master">Master</option>
+                <option value="Sir">Sir</option>
+                <option value="Lord">Lord</option>
+              </select>
+            </div>
               <div className="tile-field">
                 <input
                   name="spouse2FirstName"
