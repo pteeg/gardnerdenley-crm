@@ -30,9 +30,11 @@ function ClientPage({
 }) {
   const formatClientNameFromClient = (c) => {
     if (!c) return "";
-    // If both spouses' first names are present, show first names only
+    // If both spouses' first names are present, show both first names + primary surname when available
     if (c.spouse1FirstName && c.spouse2FirstName) {
-      return `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+      return c.spouse1Surname
+        ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+        : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
     }
     // Otherwise, show the single spouse's first name and surname if available
     if (c.spouse1FirstName || c.spouse1Surname) {
