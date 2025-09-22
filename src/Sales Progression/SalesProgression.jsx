@@ -14,7 +14,9 @@ function formatClientName(clientName, clients = []) {
   
   if (client && client.spouse1FirstName) {
     if (client.spouse2FirstName) {
-      return `${client.spouse1FirstName} and ${client.spouse2FirstName}`;
+      return client.spouse1Surname
+        ? `${client.spouse1FirstName} and ${client.spouse2FirstName} ${client.spouse1Surname}`
+        : `${client.spouse1FirstName} and ${client.spouse2FirstName}`;
     }
     return client.spouse1Surname ? `${client.spouse1FirstName} ${client.spouse1Surname}` : client.spouse1FirstName;
   }

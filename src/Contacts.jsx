@@ -264,6 +264,7 @@ function Contacts({
             updateClientStatus={updateClientStatus}
             onBack={() => setSelectedClient(null)}
             properties={properties}
+            salesProgressions={salesProgressions}
             updateClientProperties={updateClientProperties}
             setProperties={setProperties}
             allProperties={properties}

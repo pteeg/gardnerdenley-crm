@@ -17,6 +17,7 @@ function ClientPage({
   updateClientProperties,
   updateClientInfo,
   allProperties,
+  salesProgressions = [],
   updatePropertyLinkage,
   updatePropertyOffer,
   removeSalesProgressionRow,
@@ -470,6 +471,7 @@ function ClientPage({
           }}
           properties={allProperties}
           linkedProperties={linkedProperties}
+          salesProgressions={salesProgressions}
         />
       )}
 

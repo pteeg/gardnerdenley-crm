@@ -5,7 +5,9 @@ import "./ClientsTable.css";
 function formatClientName(client) {
   if (client.spouse1FirstName) {
     if (client.spouse2FirstName) {
-      return `${client.spouse1FirstName} and ${client.spouse2FirstName}`;
+      return client.spouse1Surname
+        ? `${client.spouse1FirstName} and ${client.spouse2FirstName} ${client.spouse1Surname}`
+        : `${client.spouse1FirstName} and ${client.spouse2FirstName}`;
     }
     // Single spouse: show first + surname if present
     if (client.spouse1Surname) return `${client.spouse1FirstName} ${client.spouse1Surname}`;
@@ -33,7 +35,9 @@ function ClientsTable({
       // Build a name string similar to display logic
       let name = "";
       if (c.spouse1FirstName && c.spouse2FirstName) {
-        name = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+        name = c.spouse1Surname
+          ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+          : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
       } else if (c.spouse1FirstName || c.spouse1Surname) {
         name = [c.spouse1FirstName || "", c.spouse1Surname || ""].filter(Boolean).join(" ");
       } else {

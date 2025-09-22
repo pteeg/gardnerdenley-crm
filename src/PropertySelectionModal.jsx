@@ -1,15 +1,25 @@
 import React, { useState } from "react";
 import "./PropertySelectionModal.css";
 
-function PropertySelectionModal({ isOpen, onClose, onSelect, onAddNewProperty, properties, linkedProperties }) {
+function PropertySelectionModal({ isOpen, onClose, onSelect, onAddNewProperty, properties, linkedProperties, salesProgressions = [] }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   if (!isOpen) return null;
 
-  // Filter out already linked properties
-  const availableProperties = properties.filter(property => 
-    !linkedProperties.some(linked => linked.id === property.id)
+  // Build a set of property names that appear in any sales progression (active or completed)
+  const progressionAddresses = new Set(
+    (Array.isArray(salesProgressions) ? salesProgressions : [])
+      .map(row => row?.address)
+      .filter(Boolean)
   );
+
+  // Filter out properties already linked to this/any client, or present in sales progressions
+  const availableProperties = properties.filter(property => {
+    const linkedToCurrentClient = linkedProperties.some(linked => linked.id === property.id);
+    const linkedToAnyClient = Boolean(property.linkedClient) || (Array.isArray(property.linkedClients) && property.linkedClients.length > 0);
+    const inAnyProgression = progressionAddresses.has(property.name);
+    return !linkedToCurrentClient && !linkedToAnyClient && !inAnyProgression;
+  });
 
   // Filter by search term
   const filteredProperties = availableProperties.filter(property =>
