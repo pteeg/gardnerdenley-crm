@@ -21,9 +21,34 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
   const [searchTerm, setSearchTerm] = useState("");
 
   const visibleProperties = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return filteredProperties;
-    return filteredProperties.filter((p) => (p.name || "").toLowerCase().includes(term));
+    const raw = searchTerm.trim().toLowerCase();
+    if (!raw) return filteredProperties;
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    const normalize = (v) => String(v ?? "").toLowerCase();
+    const normalizeNum = (v) => String(v ?? "").replace(/[^0-9]/g, "");
+    return filteredProperties.filter((p) => {
+      const parts = [];
+      parts.push(p.name, p.description, p.address, p.status, p.vendor, p.ownerDetails);
+      parts.push(p.style, p.parking);
+      parts.push(p.bedrooms, p.bathrooms, p.receptions, p.floorSize, p.land);
+      // price numeric
+      const priceNum = normalizeNum(p.price);
+      if (priceNum) parts.push(priceNum);
+      // linked clients names
+      if (Array.isArray(p.linkedClients)) {
+        p.linkedClients.forEach(c => {
+          if (typeof c === 'string') parts.push(c);
+          else if (c) {
+            const firsts = [c.spouse1FirstName, c.spouse2FirstName].filter(Boolean).join(' and ');
+            const single = c.spouse1Surname ? `${c.spouse1FirstName || ''} ${c.spouse1Surname}`.trim() : c.spouse1FirstName || '';
+            parts.push(firsts || single || c.name);
+          }
+        });
+      }
+      const haystack = normalize(parts.filter(Boolean).join(' \u2022 '));
+      const haystackNum = normalizeNum(parts.filter(Boolean).join(' '));
+      return tokens.every(t => haystack.includes(t) || (/[0-9]/.test(t) && haystackNum.includes(t.replace(/[^0-9]/g, ''))));
+    });
   }, [filteredProperties, searchTerm]);
 
   const handleFilterClick = (filter) => {

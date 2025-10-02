@@ -29,21 +29,52 @@ function ClientsTable({
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredClients = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return clients;
-    return clients.filter((c) => {
-      // Build a name string similar to display logic
-      let name = "";
+    const raw = searchTerm.trim().toLowerCase();
+    if (!raw) return clients;
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    const normalize = (v) => String(v ?? "").toLowerCase();
+    const normalizeNum = (v) => String(v ?? "").replace(/[^0-9]/g, "");
+    const formatDisplayName = (c) => {
       if (c.spouse1FirstName && c.spouse2FirstName) {
-        name = c.spouse1Surname
+        return c.spouse1Surname
           ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
           : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
-      } else if (c.spouse1FirstName || c.spouse1Surname) {
-        name = [c.spouse1FirstName || "", c.spouse1Surname || ""].filter(Boolean).join(" ");
-      } else {
-        name = c.name || "";
       }
-      return name.toLowerCase().includes(term);
+      if (c.spouse1FirstName || c.spouse1Surname) {
+        return [c.spouse1FirstName || "", c.spouse1Surname || ""].filter(Boolean).join(" ");
+      }
+      return c.name || "";
+    };
+    return clients.filter((c) => {
+      const haystackParts = [];
+      haystackParts.push(formatDisplayName(c));
+      haystackParts.push(c.phoneNumber, c.email, c.company, c.currentAddress);
+      haystackParts.push(c.searchStartDate, c.clientSource, c.referralContact, c.positionFunding, c.disposal);
+      haystackParts.push(c.brief);
+      // budget numeric
+      const budgetNum = normalizeNum(c.maxBudget);
+      if (budgetNum) haystackParts.push(budgetNum);
+      // notes
+      if (Array.isArray(c.notes)) {
+        c.notes.forEach(n => {
+          haystackParts.push(n?.text);
+          if (n?.date) haystackParts.push(new Date(n.date).toLocaleDateString());
+        });
+      }
+      // associated contacts
+      if (Array.isArray(c.associatedContacts)) {
+        c.associatedContacts.forEach(ac => {
+          haystackParts.push(formatDisplayName(ac?.client || {}));
+          haystackParts.push(ac?.relation);
+        });
+      }
+      // linked properties by name if present on client object
+      if (Array.isArray(c.properties)) {
+        c.properties.forEach(p => haystackParts.push(p?.name));
+      }
+      const haystack = normalize(haystackParts.filter(Boolean).join(" \u2022 "));
+      const haystackNum = normalizeNum(haystackParts.filter(Boolean).join(" "));
+      return tokens.every(t => haystack.includes(t) || (/[0-9]/.test(t) && haystackNum.includes(t.replace(/[^0-9]/g, ""))));
     });
   }, [clients, searchTerm]);
 

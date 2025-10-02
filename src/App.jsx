@@ -17,6 +17,7 @@ import { cleanupOldSalesProgressions } from "./lib/cleanupApi";
 
 function AppContent({ logout }) {
   const [activeTab, setActiveTab] = useState("Contacts");
+  const [pendingOpenClientName, setPendingOpenClientName] = useState(null);
   const pillsRef = useRef(null);
   const btnRefs = useRef({});
   const [highlightStyle, setHighlightStyle] = useState({ transform: "translateX(0)", width: 0 });
@@ -46,6 +47,18 @@ function AppContent({ logout }) {
   useEffect(() => {
     const unsubscribe = subscribeToProperties({ includeArchived: true }, setProperties);
     return () => unsubscribe();
+  }, []);
+
+  // Listen for requests to open a client by name (from PropertyPage linked pills)
+  useEffect(() => {
+    const handler = (e) => {
+      const name = e?.detail?.name;
+      if (!name) return;
+      setActiveTab("Contacts");
+      setPendingOpenClientName(name);
+    };
+    window.addEventListener('openClientByName', handler);
+    return () => window.removeEventListener('openClientByName', handler);
   }, []);
 
   const handleArchiveProperty = async (propertyToArchive) => {
@@ -352,6 +365,8 @@ function AppContent({ logout }) {
             markPropertyAsMatched={markPropertyAsMatched}
             handleCancelMatch={handleCancelMatch}
             updateClientInfo={updateClientInfo}
+            openClientName={pendingOpenClientName}
+            onConsumeOpenClient={() => setPendingOpenClientName(null)}
             createNewSalesProgression={createNewSalesProgression}
           />
         )}

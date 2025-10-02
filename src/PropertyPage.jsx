@@ -70,6 +70,9 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
       {/* Header Section */}
       <div className="property-header">
         <div className="property-title-section">
+          <button className="back-btn" onClick={onBack} type="button" style={{ marginBottom: '8px' }}>
+            <i className="fa-solid fa-arrow-left" style={{ color: '#555555', fontSize: '1.4rem' }} />
+          </button>
           <h1 className="property-title">{property.name}</h1>
           <div className="property-status">
             <span className="status-badge">
@@ -80,20 +83,39 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
                 {property.status === "Matched" ? "Matched to" : 
                  property.status === "Sold" ? "Acquired by" : 
                  "Linked to"} {property.linkedClients.map((client, index) => (
-                  <span key={index} className="linked-client">
+                  <button
+                    key={index}
+                    type="button"
+                    className="linked-client clickable"
+                    onClick={() => {
+                      const name = typeof client === 'string' ? client : (client && client.name) ? client.name : null;
+                      if (name) {
+                        window.dispatchEvent(new CustomEvent('openClientByName', { detail: { name } }));
+                      }
+                    }}
+                  >
                     {formatClientName(client)}
                     {index < property.linkedClients.length - 1 && ", "}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
             {/* Fallback for old single linkedClient field */}
             {(!property.linkedClients || property.linkedClients.length === 0) && property.linkedClient && (
-              <span className="linked-client">
+              <button
+                type="button"
+                className="linked-client clickable"
+                onClick={() => {
+                  const name = typeof property.linkedClient === 'string' ? property.linkedClient : (property.linkedClient && property.linkedClient.name) ? property.linkedClient.name : null;
+                  if (name) {
+                    window.dispatchEvent(new CustomEvent('openClientByName', { detail: { name } }));
+                  }
+                }}
+              >
                 {property.status === "Matched" ? "Matched to" : 
                  property.status === "Sold" ? "Acquired by" : 
                  "Linked to"} {formatClientName(property.linkedClient)}
-              </span>
+              </button>
             )}
           </div>
           <div className="property-price">

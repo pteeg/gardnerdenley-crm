@@ -21,15 +21,29 @@ function Contacts({
   removeSalesProgressionRow,
   markPropertyAsMatched,
   // ✅ NEW: receive helper from App.jsx
-  createNewSalesProgression
+  createNewSalesProgression,
+  openClientName,
+  onConsumeOpenClient
 }) {
   const [subPage, setSubPage] = useState("Clients");
+  const [clientsSubFilter, setClientsSubFilter] = useState({ mode: 'all', value: '' }); // mode: all|status|type
   const [showForm, setShowForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
   const [showArchivedProfessionals, setShowArchivedProfessionals] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+
+  // When asked to open a specific client by name, switch to Clients and select it
+  React.useEffect(() => {
+    if (!openClientName) return;
+    setSubPage("Clients");
+    const found = clients.find(c => c.name === openClientName);
+    if (found) {
+      setSelectedClient(found);
+    }
+    if (onConsumeOpenClient) onConsumeOpenClient();
+  }, [openClientName, clients]);
 
   const handleArchiveClient = async (clientToArchive) => {
     if (clientToArchive.id) {
@@ -226,6 +240,56 @@ function Contacts({
             active: subPage === "Clients",
             onClick: () => setSubPage("Clients"),
           },
+          // Nested subsection for Clients
+          ...(subPage === 'Clients' ? [{ key: 'clients-sub', label: (
+            <div className="gd-sidebar-subsection">
+              <button
+                className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'all' ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'all', value: '' })}
+                type="button"
+              >All</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Searching') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Searching' })}
+                type="button"
+              >Searching</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Under Offer') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Under Offer' })}
+                type="button"
+              >Under Offer</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Matched') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Matched' })}
+                type="button"
+              >Matched</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Exchanged') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Exchanged' })}
+                type="button"
+              >Exchanged</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Completed') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Completed' })}
+                type="button"
+              >Completed</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Client') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'type', value: 'Client' })}
+                type="button"
+              >Client</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Developer') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'type', value: 'Developer' })}
+                type="button"
+              >Developer</button>
+              <button
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Vendor') ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'type', value: 'Vendor' })}
+                type="button"
+              >Vendor</button>
+            </div>
+          ), active: false, onClick: () => {} }] : []),
           {
             key: "professionals",
             label: "Professionals",
@@ -239,7 +303,20 @@ function Contacts({
         {subPage === "Clients" && !selectedClient && (
           <>
             <ClientsTable
-              clients={clients.filter((c) => c.archived === showArchived)}
+              clients={clients
+                .filter((c) => c.archived === showArchived)
+                .filter((c) => {
+                  if (clientsSubFilter.mode === 'all') return true;
+                  if (clientsSubFilter.mode === 'status') {
+                    if (!clientsSubFilter.value) return true;
+                    return (c.status || '').toLowerCase() === clientsSubFilter.value.toLowerCase();
+                  }
+                  if (clientsSubFilter.mode === 'type') {
+                    if (!clientsSubFilter.value) return true;
+                    return Array.isArray(c.types) && c.types.map((t)=>String(t).toLowerCase()).includes(clientsSubFilter.value.toLowerCase());
+                  }
+                  return true;
+                })}
               onNewClientClick={() => setShowForm(true)}
               onArchiveClient={handleArchiveClient}
               onRestore={handleRestoreClient}

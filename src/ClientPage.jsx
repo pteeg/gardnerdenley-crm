@@ -55,6 +55,7 @@ function ClientPage({
   const [showNewPropertyModal, setShowNewPropertyModal] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState("");
+  const [editingNoteIndex, setEditingNoteIndex] = useState(null);
   const [showAssociateModal, setShowAssociateModal] = useState(false);
   const [associateSearch, setAssociateSearch] = useState("");
   const [selectedAssociate, setSelectedAssociate] = useState(null);
@@ -159,15 +160,30 @@ function ClientPage({
       {/* Header Section */}
       <div className="client-header">
         <div className="client-title-section">
-          <button className="back-btn" onClick={onBack} type="button" style={{ marginBottom: '8px' }}>←</button>
+          <button className="back-btn" onClick={onBack} type="button" style={{ marginBottom: '8px' }}>
+            <i className="fa-solid fa-arrow-left" style={{ color: '#555555', fontSize: '1.4rem' }} />
+          </button>
           <h1 className="client-title">{formatClientNameFromClient(client)}</h1>
-          <div className="client-status">
-            <span className="status-badge">
-              Status: {client.status || "Active"}
+            <div className="client-status">
+            <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-')}`}>
+              {client.status || "Active"}
             </span>
+            {Array.isArray(client.types) && client.types.length > 0 && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                {client.types.map((t, idx) => (
+                  <span key={idx} className="status-badge" style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="client-budget">
               <span className="budget-label">Budget: </span>
               <span className="budget-value">{client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not specified"}</span>
+            </div>
+            <div className="client-budget" style={{ marginTop: '6px' }}>
+              <span className="budget-label">Current Address: </span>
+              <span className="budget-value">{client.currentAddress || "Not provided"}</span>
             </div>
           </div>
         </div>
@@ -220,6 +236,10 @@ function ClientPage({
               <div className="contact-item">
                 <span className="contact-label">Email</span>
                 <span className="contact-value">{client.email || "Not provided"}</span>
+              </div>
+              <div className="contact-item">
+                <span className="contact-label">Company</span>
+                <span className="contact-value">{client.company || "Not provided"}</span>
               </div>
             </div>
           </div>
@@ -284,10 +304,34 @@ function ClientPage({
                 <span style={{ color: "#666", fontStyle: "italic" }}>No notes yet</span>
               ) : (
                 (client.notes || []).map((n, idx) => (
-                  <div key={idx} style={{ border: "1px solid #e3eef8", background: "#fff", borderRadius: 6, padding: "8px 10px" }}>
-                    <span style={{ color: "#333", fontSize: "0.95rem" }}>
+                  <div key={idx} className="note-row">
+                    <span className="note-text">
                       {new Date(n.date).toLocaleDateString()}: {n.text}
                     </span>
+                    <div className="note-actions">
+                      <button
+                        className="icon-button"
+                        title="Edit note"
+                        onClick={() => {
+                          setNoteText(n.text || "");
+                          setEditingNoteIndex(idx);
+                          setShowNoteModal(true);
+                        }}
+                      >
+                        <i className="fa-solid fa-pen" style={{ color: '#555555' }} />
+                      </button>
+                      <button
+                        className="icon-button danger"
+                        title="Delete note"
+                        onClick={async () => {
+                          if (!window.confirm("Delete this note?")) return;
+                          const notes = (client.notes || []).filter((_, i) => i !== idx);
+                          await updateClientInfo(client.name, { notes });
+                        }}
+                      >
+                        <i className="fa-solid fa-trash" style={{ color: '#ff0000' }} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -335,6 +379,7 @@ function ClientPage({
                                     offerStatus: "Accepted",
                                     setLastOfferStatus: "Accepted"
                                   });
+                                  updateClientStatus(client.name, "Matched");
                                 }}
                               >
                                 Accept
@@ -348,6 +393,7 @@ function ClientPage({
                                     offerStatus: "None",
                                     setLastOfferStatus: "Declined"
                                   });
+                                  updateClientStatus(client.name, "Searching");
                                 }}
                               >
                                 Decline
@@ -470,6 +516,7 @@ function ClientPage({
                       status: "Pending"
                     }
                   });
+                  updateClientStatus(client.name, "Under Offer");
                   setShowOfferModal(false);
                   setOfferAmount("");
                   setSelectedPropertyName(null);
@@ -493,7 +540,7 @@ function ClientPage({
       {showNoteModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3>Add Note</h3>
+            <h3>{editingNoteIndex !== null ? "Edit Note" : "Add Note"}</h3>
             <div className="form-group">
               <label>Note</label>
               <textarea
@@ -509,16 +556,25 @@ function ClientPage({
                 onClick={async () => {
                   const text = noteText.trim();
                   if (!text) return;
-                  const newNote = { date: new Date().toISOString(), text };
-                  const notes = Array.isArray(client.notes) ? [...client.notes, newNote] : [newNote];
-                  await updateClientInfo(client.name, { notes });
+                  if (editingNoteIndex !== null) {
+                    const notes = Array.isArray(client.notes) ? [...client.notes] : [];
+                    if (notes[editingNoteIndex]) {
+                      notes[editingNoteIndex] = { ...notes[editingNoteIndex], text };
+                    }
+                    await updateClientInfo(client.name, { notes });
+                  } else {
+                    const newNote = { date: new Date().toISOString(), text };
+                    const notes = Array.isArray(client.notes) ? [...client.notes, newNote] : [newNote];
+                    await updateClientInfo(client.name, { notes });
+                  }
                   setNoteText("");
+                  setEditingNoteIndex(null);
                   setShowNoteModal(false);
                 }}
               >
                 Save
               </button>
-              <button onClick={() => { setShowNoteModal(false); setNoteText(""); }}>Cancel</button>
+              <button onClick={() => { setShowNoteModal(false); setNoteText(""); setEditingNoteIndex(null); }}>Cancel</button>
             </div>
           </div>
         </div>

@@ -11,9 +11,20 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
     return {
       phoneNumber: initialData.phoneNumber || "",
       email: initialData.email || "",
+      company: initialData.company || "",
       brief: initialData.brief || "",
       maxBudget: formattedBudget,
       status: initialData.status || "Searching",
+      types: (
+        isEdit
+          ? (Array.isArray(initialData.types) ? initialData.types : [])
+          : (
+              Array.isArray(initialData.types) && initialData.types.length > 0
+                ? initialData.types
+                : ["Client"]
+            )
+      ),
+      currentAddress: initialData.currentAddress || "",
       spouse1Title: initialData.spouse1Title || "",
       spouse1FirstName: initialData.spouse1FirstName || "",
       spouse1Surname: initialData.spouse1Surname || "",
@@ -46,6 +57,11 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
   const handleSubmit = () => {
     if (!client.spouse1FirstName) {
       alert("Spouse 1 first name is required.");
+      return;
+    }
+
+    if (!Array.isArray(client.types) || client.types.length === 0) {
+      alert("Please select at least one Type (e.g. Client, Developer, or Vendor).");
       return;
     }
 
@@ -125,6 +141,14 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
                   placeholder="Email"
                 />
               </div>
+            <div className="tile-field">
+              <input
+                name="company"
+                value={client.company}
+                onChange={handleChange}
+                placeholder="Company"
+              />
+            </div>
               <div className="tile-subtitle">Spouse</div>
             <div className="tile-field">
               <select
@@ -221,6 +245,22 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
                 )}
               </div>
             </div>
+
+            {/* Current Address tile */}
+            <div className="tile tile-middle" style={{ marginTop: '12px' }}>
+              <h3 className="tile-title">Current Address</h3>
+              <div className="tile-grid single">
+                <div className="tile-field" style={{ gridColumn: '1 / -1' }}>
+                  <input
+                    name="currentAddress"
+                    value={client.currentAddress}
+                    onChange={handleChange}
+                    placeholder="Enter current address"
+                  />
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* Right column: Search Details (Brief + Search Date) */}
@@ -240,6 +280,41 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
                     onChange={handleChange}
                     placeholder="Search Start Date"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Type tile moved under Search Details */}
+            <div className="tile tile-right" style={{ marginTop: '12px' }}>
+              <h3 className="tile-title">Type</h3>
+              <div className="tile-grid single">
+                <div className="tile-field" style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['Client', 'Developer', 'Vendor'].map((t) => {
+                    const selected = client.types.includes(t);
+                    return (
+                      <button
+                        type="button"
+                        key={t}
+                        onClick={() => {
+                          setClient(prev => {
+                            const has = prev.types.includes(t);
+                            const nextTypes = has ? prev.types.filter(x => x !== t) : [...prev.types, t];
+                            return { ...prev, types: nextTypes };
+                          });
+                        }}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: '16px',
+                          border: '1px solid ' + (selected ? '#2b6cb0' : '#cbd5e0'),
+                          background: selected ? '#e6f0fb' : '#fff',
+                          color: selected ? '#2b6cb0' : '#333',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

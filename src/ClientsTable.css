@@ -8,9 +8,9 @@
 }
 
 .status-badge.searching {
-  background-color: rgba(255, 165, 0, 0.2);
-  border: 1.5px solid #FFA500;
-  color: #FFA500;
+  background-color: rgba(241, 196, 15, 0.2); /* yellow */
+  border: 1.5px solid #f1c40f;
+  color: #f1c40f; /* brighter yellow text */
 }
 
 .status-badge.awaiting-vendor-response {
@@ -20,14 +20,33 @@
 }
 
 .status-badge.matched {
-  background-color: rgba(40, 167, 69, 0.2);
-  border: 1.5px solid #28a745;
-  color: #28a745;
+  background-color: rgba(0, 123, 255, 0.18);
+  border: 1.5px solid #007bff; /* blue */
+  color: #007bff;
 }
 
 .status-badge.complete {
   background-color: rgba(108, 117, 125, 0.2);
   border: 1.5px solid #6c757d;
+  color: #6c757d;
+}
+
+/* New statuses */
+.status-badge.under-offer {
+  background-color: rgba(255, 140, 0, 0.3); /* darker than Searching */
+  border: 1.5px solid #ff8c00;
+  color: #ff8c00;
+}
+
+.status-badge.exchanged {
+  background-color: rgba(40, 167, 69, 0.2);
+  border: 1.5px solid #28a745; /* green */
+  color: #28a745;
+}
+
+.status-badge.completed {
+  background-color: rgba(108, 117, 125, 0.2);
+  border: 1.5px solid #6c757d; /* grey */
   color: #6c757d;
 }
 

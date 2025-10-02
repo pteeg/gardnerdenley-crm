@@ -150,17 +150,29 @@ const SalesProgression = ({
       console.warn("Cannot update sales progression - no valid document ID. Row ID:", row?.id);
     }
 
-    // Mark property as sold when exchanged = Done
+    // Mark property as sold when exchanged = Done, and update client status
     if (field === "exchanged" && newValue === "Done") {
       const propertyName = currentData[rowIndex].address;
       await markPropertyAsSold(propertyName);
+      const clientName = currentData[rowIndex].client;
+      if (updateClientStatus) {
+        await updateClientStatus(clientName, "Exchanged");
+      }
     }
 
-    // Update client status to Complete when deal is completed
+    // Update client status to Completed when invoice paid is Done
+    if (field === "invoicePaid" && newValue === "Done") {
+      const clientName = currentData[rowIndex].client;
+      if (updateClientStatus) {
+        await updateClientStatus(clientName, "Completed");
+      }
+    }
+
+    // Update client status to Complete when deal is completed (legacy button)
     if (field === "dealComplete" && newValue === true) {
       const clientName = currentData[rowIndex].client;
       if (updateClientStatus) {
-        await updateClientStatus(clientName, "Complete");
+        await updateClientStatus(clientName, "Completed");
       }
     }
   };
@@ -171,6 +183,15 @@ const SalesProgression = ({
     const row = currentData[rowIndex];
     if (row?.id && row.id !== "Not Done") {
       const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+      // If user sets completion date and paymentExpected is empty, auto-fill paymentExpected with same date
+      if (field === "completionDateSet") {
+        const shouldAutofillPayment = !row.paymentExpected || row.paymentExpected === "";
+        const payload = shouldAutofillPayment
+          ? { completionDateSet: value, paymentExpected: value }
+          : { completionDateSet: value };
+        await updateSalesProgressionById(row.id, payload);
+        return;
+      }
       await updateSalesProgressionById(row.id, { [field]: value });
     } else {
       console.warn("Cannot update sales progression - no valid document ID");

@@ -149,6 +149,15 @@
   color: #333;
 }
 
+.linked-client.clickable {
+  cursor: pointer;
+  border-color: #cbd5e0;
+}
+
+.linked-client.clickable:hover {
+  background: #eef2f7;
+}
+
 .property-price {
   margin-top: 1rem;
 }
