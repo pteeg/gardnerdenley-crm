@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import StatusToggle from "./StatusToggle";
 import "./SalesProgression.css";
 import Sidebar from "../Sidebar";
-import ProfessionalChooserButton from "../ProfessionalChooserButton";
+import ProfessionalChooserButton from "../Contacts/ProfessionalChooserButton";
 import { v4 as uuidv4 } from "uuid";
 
 // Helper function to format client names
@@ -141,7 +141,11 @@ const SalesProgression = ({
       console.log("Updating Firestore document with ID:", row.id);
       try {
         const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
-        await updateSalesProgressionById(row.id, { [field]: newValue });
+        const payload = { [field]: newValue };
+        if (field === "completed") {
+          payload.dealComplete = newValue === "Done";
+        }
+        await updateSalesProgressionById(row.id, payload);
         console.log("SalesProgression: Successfully updated", field, "in row", rowIndex, "to", newValue);
       } catch (error) {
         console.error("Error updating sales progression:", error);
@@ -170,6 +174,14 @@ const SalesProgression = ({
 
     // Update client status to Complete when deal is completed (legacy button)
     if (field === "dealComplete" && newValue === true) {
+      const clientName = currentData[rowIndex].client;
+      if (updateClientStatus) {
+        await updateClientStatus(clientName, "Completed");
+      }
+    }
+
+    // Update client status to Completed when new Completed? column is set to Done
+    if (field === "completed" && newValue === "Done") {
       const clientName = currentData[rowIndex].client;
       if (updateClientStatus) {
         await updateClientStatus(clientName, "Completed");
@@ -230,7 +242,15 @@ const SalesProgression = ({
           ]}
         />
         <div className="sales-progression-content">
-          <div className="sales-table-container">
+          <div
+            className="sales-table-container"
+            style={{ overflowX: ((showCompleted ? completedDeals : activeDeals).length === 0) ? 'hidden' : undefined }}
+          >
+          {((showCompleted ? completedDeals : activeDeals).length === 0) ? (
+            <div style={{ padding: '1rem', color: '#555555', fontFamily: 'sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '240px', textAlign: 'center', width: '100%' }}>
+              {showCompleted ? 'No Completed Deals in Progression' : 'No Active Deals in Progression. Relax 😎'}
+            </div>
+          ) : (
           <table className="sales-progression-table">
           <thead>
             <tr>
@@ -257,6 +277,7 @@ const SalesProgression = ({
               <th>Exchange Date Set?</th>
               <th>Completion Date Set?</th>
               <th>Exchanged</th>
+              <th>Completed?</th>
               <th>Invoice Sent?</th>
               <th>Invoice Paid?</th>
               <th>Payment Expected</th>
@@ -493,6 +514,14 @@ const SalesProgression = ({
                 </td>
                 <td>
                   <StatusToggle
+                    value={row.completed || "Not Done"}
+                    onChange={(newValue) =>
+                      handleStatusChange(rowIndex, "completed", newValue)
+                    }
+                  />
+                </td>
+                <td>
+                  <StatusToggle
                     value={row.invoiceSent}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "invoiceSent", newValue)
@@ -572,6 +601,7 @@ const SalesProgression = ({
             ))}
           </tbody>
           </table>
+          )}
           </div>
         </div>
       </div>

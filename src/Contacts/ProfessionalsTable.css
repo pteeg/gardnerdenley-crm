@@ -120,3 +120,23 @@
   padding-left: 0;
   padding-right: 1.5rem;
 }
+
+.type-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.82rem;
+  text-transform: none;
+  border: 1px solid #b3d0ff;
+  background: #eef5ff;
+  color: #2b6cb0;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background-color: #f0f0f0;
+}

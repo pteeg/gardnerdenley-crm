@@ -18,6 +18,7 @@ export async function createProperty(property) {
     price: property.price || "",
     status: property.status || (property.onMarket ? "On Market" : "Off Market"),
     archived: false,
+    favourite: Boolean(property.favourite) || false,
     linkedClient: property.linkedClient || "",
     address: property.address || "",
     offerStatus: property.offerStatus || null,

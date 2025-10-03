@@ -5,9 +5,9 @@ import ProfessionalsTable from "./ProfessionalsTable";
 import ProfessionalPage from "./ProfessionalPage";
 import NewProfessionalModal from "./NewProfessionalModal";
 import "./Contacts.css";
-import Sidebar from "./Sidebar";
+import Sidebar from "../Sidebar";
 import AddClientForm from "./AddClientForm";
-import { createClient } from "./lib/clientsApi";
+import { createClient } from "../lib/clientsApi";
 
 function Contacts({
   professionals,
@@ -26,7 +26,8 @@ function Contacts({
   onConsumeOpenClient
 }) {
   const [subPage, setSubPage] = useState("Clients");
-  const [clientsSubFilter, setClientsSubFilter] = useState({ mode: 'all', value: '' }); // mode: all|status|type
+  const [clientsSubFilter, setClientsSubFilter] = useState({ mode: 'all', value: '' }); // mode: all|status|type|fav
+  const [professionalsSubFilter, setProfessionalsSubFilter] = useState({ mode: 'all' }); // mode: all|fav|type
   const [showForm, setShowForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
@@ -47,7 +48,7 @@ function Contacts({
 
   const handleArchiveClient = async (clientToArchive) => {
     if (clientToArchive.id) {
-      const { archiveClientById } = await import("./lib/clientsApi");
+      const { archiveClientById } = await import("../lib/clientsApi");
       await archiveClientById(clientToArchive.id);
       
       // Reset property statuses back to market status
@@ -58,7 +59,7 @@ function Contacts({
 
   const handleDeleteClient = async (clientToDelete) => {
     if (clientToDelete.id) {
-      const { deleteClientById } = await import("./lib/clientsApi");
+      const { deleteClientById } = await import("../lib/clientsApi");
       await deleteClientById(clientToDelete.id);
       
       // Reset property statuses back to market status
@@ -77,7 +78,7 @@ function Contacts({
     // Reset each property's status back to its original market status
     for (const property of linkedProperties) {
       if (property.id) {
-        const { updatePropertyById } = await import("./lib/propertiesApi");
+        const { updatePropertyById } = await import("../lib/propertiesApi");
         
         // Use the stored original market status, or default to "On Market"
         const marketStatus = property.originalMarketStatus || "On Market";
@@ -97,7 +98,7 @@ function Contacts({
 
   const handleRestoreClient = async (clientToRestore) => {
     if (clientToRestore.id) {
-      const { restoreClientById } = await import("./lib/clientsApi");
+      const { restoreClientById } = await import("../lib/clientsApi");
       await restoreClientById(clientToRestore.id);
     }
     setSelectedClient(null);
@@ -106,17 +107,19 @@ function Contacts({
   const updateClientStatus = async (clientName, newStatus) => {
     const target = clients.find(c => c.name === clientName);
     if (target?.id) {
-      const { updateClientById } = await import("./lib/clientsApi");
+      const { updateClientById } = await import("../lib/clientsApi");
       await updateClientById(target.id, { status: newStatus, archived: false });
       // Optimistically update local state so UI reflects immediately
       setClients(prev => prev.map(c => c.id === target.id ? { ...c, status: newStatus, archived: false } : c));
+      // If this client is currently open, refresh the selectedClient too
+      setSelectedClient(prev => (prev && prev.id === target.id ? { ...prev, status: newStatus, archived: false } : prev));
     }
   };
 
   const updatePropertyOffer = async (propertyName, update) => {
     const property = properties.find(p => p.name === propertyName);
     if (property?.id) {
-      const { updatePropertyById } = await import("./lib/propertiesApi");
+      const { updatePropertyById } = await import("../lib/propertiesApi");
       // Build offers history updates
       let offers = Array.isArray(property.offers) ? [...property.offers] : [];
       let offersChanged = false;
@@ -143,7 +146,7 @@ function Contacts({
   const updateClientProperties = async (clientName, updatedProperties) => {
     const client = clients.find(c => c.name === clientName);
     if (client?.id) {
-      const { updateClientById } = await import("./lib/clientsApi");
+      const { updateClientById } = await import("../lib/clientsApi");
       await updateClientById(client.id, { properties: updatedProperties });
     }
   };
@@ -152,7 +155,7 @@ function Contacts({
 
   const handleArchiveProfessional = async (proToArchive) => {
     if (proToArchive.id) {
-      const { archiveProfessionalById } = await import('./lib/professionalsApi');
+      const { archiveProfessionalById } = await import('../lib/professionalsApi');
       await archiveProfessionalById(proToArchive.id);
     }
     setSelectedProfessional(null);
@@ -160,7 +163,7 @@ function Contacts({
 
   const handleRestoreProfessional = async (proToRestore) => {
     if (proToRestore.id) {
-      const { restoreProfessionalById } = await import('./lib/professionalsApi');
+      const { restoreProfessionalById } = await import('../lib/professionalsApi');
       await restoreProfessionalById(proToRestore.id);
     }
     setSelectedProfessional(null);
@@ -169,7 +172,7 @@ function Contacts({
   const toggleArchivedProfessionalsView = () => setShowArchivedProfessionals(prev => !prev);
 
   const handleAddProfessional = async (newPro) => {
-    const { createProfessional } = await import('./lib/professionalsApi');
+    const { createProfessional } = await import('../lib/professionalsApi');
     await createProfessional({ ...newPro, archived: false });
     setIsAdding(false);
   };
@@ -185,14 +188,14 @@ function Contacts({
 
     const client = clients.find(c => c.name === clientName);
     if (client?.id) {
-      const { updateClientById } = await import("./lib/clientsApi");
+      const { updateClientById } = await import("../lib/clientsApi");
       const updatedProperties = client.properties?.filter(p => p.name !== propertyName) || [];
       await updateClientById(client.id, { properties: updatedProperties });
     }
 
     const property = properties.find(p => p.name === propertyName);
     if (property?.id) {
-      const { updatePropertyById } = await import("./lib/propertiesApi");
+      const { updatePropertyById } = await import("../lib/propertiesApi");
       await updatePropertyById(property.id, {
         linkedClient: "",
         status: "On Market",
@@ -204,7 +207,7 @@ function Contacts({
   const updateClientInfo = async (originalName, updatedClient) => {
     const client = clients.find(c => c.name === originalName);
     if (client?.id) {
-      const { updateClientById } = await import("./lib/clientsApi");
+      const { updateClientById } = await import("../lib/clientsApi");
       await updateClientById(client.id, updatedClient);
     }
 
@@ -212,7 +215,7 @@ function Contacts({
     const progressionsToUpdate = salesProgressions.filter(row => row.client === originalName);
     for (const progression of progressionsToUpdate) {
       if (progression.id) {
-        const { updateSalesProgressionById } = await import("./lib/salesProgressionsApi");
+        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
         await updateSalesProgressionById(progression.id, { client: updatedClient.name });
       }
     }
@@ -221,7 +224,7 @@ function Contacts({
     const propertiesToUpdate = properties.filter(p => p.linkedClient === originalName);
     for (const property of propertiesToUpdate) {
       if (property.id) {
-        const { updatePropertyById } = await import("./lib/propertiesApi");
+        const { updatePropertyById } = await import("../lib/propertiesApi");
         await updatePropertyById(property.id, { linkedClient: updatedClient.name });
       }
     }
@@ -242,12 +245,17 @@ function Contacts({
           },
           // Nested subsection for Clients
           ...(subPage === 'Clients' ? [{ key: 'clients-sub', label: (
-            <div className="gd-sidebar-subsection">
+            <div className="gd-sidebar-subsection slide-in">
               <button
                 className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'all' ? 'active' : ''}`}
                 onClick={() => setClientsSubFilter({ mode: 'all', value: '' })}
                 type="button"
               >All</button>
+              <button
+                className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'fav' ? 'active' : ''}`}
+                onClick={() => setClientsSubFilter({ mode: 'fav', value: '' })}
+                type="button"
+              >Favourites</button>
               <button
                 className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Searching') ? 'active' : ''}`}
                 onClick={() => setClientsSubFilter({ mode: 'status', value: 'Searching' })}
@@ -296,6 +304,51 @@ function Contacts({
             active: subPage === "Professionals",
             onClick: () => setSubPage("Professionals"),
           },
+          // Nested subsection for Professionals
+          ...(subPage === 'Professionals' ? [{ key: 'pros-sub', label: (
+            <div className="gd-sidebar-subsection slide-in">
+              <button
+                className={`gd-sidebar-item subitem ${professionalsSubFilter.mode === 'all' ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'all' })}
+                type="button"
+              >All</button>
+              <button
+                className={`gd-sidebar-item subitem ${professionalsSubFilter.mode === 'fav' ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'fav' })}
+                type="button"
+              >Favourites</button>
+              <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Solicitor') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Solicitor' })}
+                type="button"
+              >Solicitor</button>
+              <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Mortgage Advisor') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Mortgage Advisor' })}
+                type="button"
+              >Mortgage Advisor</button>
+              <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Surveyor') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Surveyor' })}
+                type="button"
+              >Surveyor</button>
+              <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'SDLT Advisor') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'SDLT Advisor' })}
+                type="button"
+              >SDLT Advisor</button>
+              <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Agent') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Agent' })}
+                type="button"
+              >Agent</button>
+              <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Other') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Other' })}
+                type="button"
+              >Other</button>
+            </div>
+          ), active: false, onClick: () => {} }] : []),
         ]}
       />
 
@@ -307,6 +360,9 @@ function Contacts({
                 .filter((c) => c.archived === showArchived)
                 .filter((c) => {
                   if (clientsSubFilter.mode === 'all') return true;
+                  if (clientsSubFilter.mode === 'fav') {
+                    return c.favourite === true;
+                  }
                   if (clientsSubFilter.mode === 'status') {
                     if (!clientsSubFilter.value) return true;
                     return (c.status || '').toLowerCase() === clientsSubFilter.value.toLowerCase();
@@ -317,6 +373,7 @@ function Contacts({
                   }
                   return true;
                 })}
+              favouritesOnly={clientsSubFilter.mode === 'fav'}
               onNewClientClick={() => setShowForm(true)}
               onArchiveClient={handleArchiveClient}
               onRestore={handleRestoreClient}
@@ -349,7 +406,7 @@ function Contacts({
             updatePropertyLinkage={async (propertyName, clientData) => {
               const property = properties.find(p => p.name === propertyName);
               if (property?.id) {
-                const { updatePropertyById } = await import("./lib/propertiesApi");
+                const { updatePropertyById } = await import("../lib/propertiesApi");
                 
                 // Store original market status if not already stored
                 const originalMarketStatus = property.originalMarketStatus || property.status;
@@ -387,11 +444,18 @@ function Contacts({
         {subPage === "Professionals" && !selectedProfessional && (
           <>
             <ProfessionalsTable
-              professionals={professionals.filter((p) => p.archived === showArchivedProfessionals)}
+              professionals={professionals
+                .filter((p) => p.archived === showArchived)
+                .filter((p) => {
+                  if (professionalsSubFilter.mode === 'fav') return p.favourite === true;
+                  if (professionalsSubFilter.mode === 'type') return (p.type || '').toLowerCase() === (professionalsSubFilter.value || '').toLowerCase();
+                  return true;
+                })
+              }
               onArchiveProfessional={handleArchiveProfessional}
               onRestoreProfessional={handleRestoreProfessional}
               onToggleView={toggleArchivedProfessionalsView}
-              showArchived={showArchivedProfessionals}
+              showArchived={showArchived}
               onRowClick={(pro) => setSelectedProfessional(pro)}
               onAddProfessional={() => setIsAdding(true)}
             />

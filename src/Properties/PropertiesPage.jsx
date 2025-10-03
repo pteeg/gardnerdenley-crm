@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import './PropertiesPage.css';
-import Sidebar from './Sidebar';
+import Sidebar from '../Sidebar';
 import NewPropertyModal from './NewPropertyModal';
 import PropertyPage from './PropertyPage';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 
 const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onRestoreProperty, onToggleView, showArchived }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -22,11 +25,12 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
 
   const visibleProperties = useMemo(() => {
     const raw = searchTerm.trim().toLowerCase();
-    if (!raw) return filteredProperties;
+    const base = selectedFilter === 'fav' ? filteredProperties.filter(p => p.favourite === true) : filteredProperties;
+    if (!raw) return [...base].sort((a, b) => (b?.favourite === true) - (a?.favourite === true));
     const tokens = raw.split(/\s+/).filter(Boolean);
     const normalize = (v) => String(v ?? "").toLowerCase();
     const normalizeNum = (v) => String(v ?? "").replace(/[^0-9]/g, "");
-    return filteredProperties.filter((p) => {
+    return base.filter((p) => {
       const parts = [];
       parts.push(p.name, p.description, p.address, p.status, p.vendor, p.ownerDetails);
       parts.push(p.style, p.parking);
@@ -48,8 +52,9 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
       const haystack = normalize(parts.filter(Boolean).join(' \u2022 '));
       const haystackNum = normalizeNum(parts.filter(Boolean).join(' '));
       return tokens.every(t => haystack.includes(t) || (/[0-9]/.test(t) && haystackNum.includes(t.replace(/[^0-9]/g, ''))));
-    });
-  }, [filteredProperties, searchTerm]);
+    })
+    .sort((a, b) => (b?.favourite === true) - (a?.favourite === true));
+  }, [filteredProperties, selectedFilter, searchTerm]);
 
   const handleFilterClick = (filter) => {
     setSelectedFilter(filter);
@@ -57,7 +62,7 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
   };
 
   const handleAddProperty = async (newProperty) => {
-    const { createProperty } = await import('./lib/propertiesApi');
+    const { createProperty } = await import('../lib/propertiesApi');
     await createProperty(newProperty);
     setIsAdding(false);
   };
@@ -71,13 +76,13 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
   };
 
   const handleToggleArchive = async (id, archived) => {
-    const { toggleArchiveProperty } = await import('./lib/propertiesApi');
+    const { toggleArchiveProperty } = await import('../lib/propertiesApi');
     await toggleArchiveProperty(id, !archived);
   };
 
   const handleDeleteProperty = async (id) => {
     if (window.confirm('Are you sure you want to permanently delete this property? This action cannot be undone.')) {
-      const { deletePropertyById } = await import('./lib/propertiesApi');
+      const { deletePropertyById } = await import('../lib/propertiesApi');
       await deletePropertyById(id);
     }
   };
@@ -96,7 +101,7 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
   };
 
   const handleUpdateProperty = async (id, updatedData) => {
-    const { updatePropertyById } = await import('./lib/propertiesApi');
+    const { updatePropertyById } = await import('../lib/propertiesApi');
     await updatePropertyById(id, updatedData);
     
     // Update the selectedProperty with the new data
@@ -114,6 +119,7 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
         title="Properties"
         items={[
           { key: 'all', label: 'All Properties', active: selectedFilter === 'all' && !showArchived, onClick: () => handleFilterClick('all') },
+          { key: 'fav', label: 'Favourites', active: selectedFilter === 'fav' && !showArchived, onClick: () => handleFilterClick('fav') },
           { key: 'on', label: 'On Market', active: selectedFilter === 'on' && !showArchived, onClick: () => handleFilterClick('on') },
           { key: 'off', label: 'Off Market', active: selectedFilter === 'off' && !showArchived, onClick: () => handleFilterClick('off') },
           { key: 'matched', label: 'Matched', active: selectedFilter === 'matched' && !showArchived, onClick: () => handleFilterClick('matched') },
@@ -148,26 +154,41 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
             <table className="properties-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}></th>
                   <th>Name</th>
                   <th>Description</th>
                   <th>Guide Price</th>
                   <th>Status</th>
-                  <th></th>
+                  <th style={{ width: '120px', textAlign: 'right' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {visibleProperties.map(property => (
                   <tr key={property.id}>
+                    <td onClick={(e) => e.stopPropagation()} style={{ width: '40px' }}>
+                      <button
+                        aria-label={property.favourite ? 'Unfavourite' : 'Favourite'}
+                        className="icon-button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const { updatePropertyById } = await import('../lib/propertiesApi');
+                          await updatePropertyById(property.id, { favourite: !property.favourite });
+                        }}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                      >
+                        <FontAwesomeIcon icon={property.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
+                      </button>
+                    </td>
                     <td onClick={() => handleRowClick(property)}>{property.name}</td>
                     <td onClick={() => handleRowClick(property)}>{property.description}</td>
                     <td onClick={() => handleRowClick(property)}>{property.price ? `£${Number(property.price).toLocaleString()}` : ''}</td>
                     <td onClick={() => handleRowClick(property)}>{property.status}</td>
-                    <td>
+                    <td style={{ width: '120px', textAlign: 'right' }}>
                       <div className="action-buttons">
                         <button
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevent row click
-                            handleToggleArchive(property.id, property.archived);
+                          e.stopPropagation(); // Prevent row click
+                          handleToggleArchive(property.id, property.archived);
                           }}
                           className={property.archived ? "unarchive-button" : "archive-button"}
                         >

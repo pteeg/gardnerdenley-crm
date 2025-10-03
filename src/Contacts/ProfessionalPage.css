@@ -1,0 +1,151 @@
+.professional-page {
+  padding: 0;
+  font-family: sans-serif;
+  background: white;
+}
+
+/* Header */
+.professional-header {
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.professional-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.meta-label {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.meta-value {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Content */
+.professional-content {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8f9fa;
+  min-height: calc(100vh - 200px);
+}
+
+.professional-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Form controls in edit panel */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.form-group input, .form-group select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.save-btn {
+  padding: 0.5rem 1rem;
+  background-color: #555555;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  padding: 0.5rem 1rem;
+  background-color: #ccc;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.professional-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.professional-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #555;
+}
+
+/* Reuse pills */
+.type-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.82rem;
+  text-transform: none;
+  border: 1px solid #b3d0ff;
+  background: #eef5ff;
+  color: #2b6cb0;
+}
+
+.empty-text {
+  color: #666;
+}

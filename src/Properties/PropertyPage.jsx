@@ -7,6 +7,21 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
 
   if (!property) return null;
 
+  const formatOfferClientDisplay = () => {
+    if (Array.isArray(property.linkedClients) && property.linkedClients.length > 0) {
+      const c = property.linkedClients[0];
+      if (typeof c === 'string') return c;
+      const first1 = c?.spouse1FirstName || "";
+      const first2 = c?.spouse2FirstName || "";
+      const surname = c?.spouse1Surname || "";
+      if (first1 && first2) {
+        return [first1, "and", first2, surname].filter(Boolean).join(" ");
+      }
+      return [first1, surname].filter(Boolean).join(" ");
+    }
+    return "Client";
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Matched": return "#28a745";
@@ -196,14 +211,7 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
                 {property.offers.map((o, idx) => (
                   <div key={idx} className="offer-entry">
                     <span>
-                      {property.linkedClients && property.linkedClients.length > 0
-                        ? (typeof property.linkedClients[0] === 'string'
-                            ? property.linkedClients[0]
-                            : (property.linkedClients[0].spouse1FirstName && property.linkedClients[0].spouse2FirstName
-                                ? `${property.linkedClients[0].spouse1FirstName} and ${property.linkedClients[0].spouse2FirstName}`
-                                : [property.linkedClients[0].spouse1FirstName, property.linkedClients[0].spouse1Surname].filter(Boolean).join(' ')))
-                        : 'Client'}
-                      {` ${new Date(o.date).toLocaleDateString()}: £${Number(o.amount).toLocaleString()}${o.status ? ` (${o.status})` : ''}`}
+                      {formatOfferClientDisplay()} {`${new Date(o.date).toLocaleDateString()}: £${Number(o.amount).toLocaleString()}${o.status ? ` (${o.status})` : ''}`}
                     </span>
                   </div>
                 ))}

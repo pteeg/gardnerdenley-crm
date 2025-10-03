@@ -1,5 +1,8 @@
 import React from "react";
 import "./PropertiesTable.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 
 function PropertiesTable({
   properties,
@@ -22,6 +25,7 @@ function PropertiesTable({
       <table className="properties-table">
         <thead>
           <tr>
+            <th></th>
             <th>Name</th>
             <th>Brief</th>
             <th>Price</th>
@@ -32,7 +36,7 @@ function PropertiesTable({
         <tbody>
           {properties.length === 0 ? (
             <tr>
-              <td colSpan="5" className="empty-row">
+              <td colSpan="6" className="empty-row">
                 {showArchived
                   ? "No archived properties."
                   : "No active properties."}
@@ -41,6 +45,20 @@ function PropertiesTable({
           ) : (
             properties.map((property, index) => (
               <tr key={index}>
+                <td>
+                  <button
+                    aria-label={property.favourite ? 'Unfavourite' : 'Favourite'}
+                    className="icon-button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const { updatePropertyById } = await import('../lib/propertiesApi');
+                      await updatePropertyById(property.id, { favourite: !property.favourite });
+                    }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <FontAwesomeIcon icon={property.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
+                  </button>
+                </td>
                 <td>{property.name}</td>
                 <td>{property.brief}</td>
                 <td>{property.price}</td>

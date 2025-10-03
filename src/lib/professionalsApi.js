@@ -15,7 +15,10 @@ export async function createProfessional(professional) {
   const payload = {
     name: professional.name,
     company: professional.company || "",
+    email: professional.email || "",
+    phoneNumber: professional.phoneNumber || "",
     type: professional.type || "",
+    favourite: Boolean(professional.favourite) || false,
     archived: false,
     createdAt: Date.now(),
   };

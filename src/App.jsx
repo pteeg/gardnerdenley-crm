@@ -4,8 +4,8 @@ import "./App.css";
 import gdLogo from "./assets/gd-logo.jpeg";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
-import Contacts from "./Contacts";
-import PropertiesPage from "./PropertiesPage";
+import Contacts from "./Contacts/Contacts";
+import PropertiesPage from "./Properties/PropertiesPage";
 import SalesProgression from "./Sales Progression/SalesProgression";
 import WongaReport from "./Wonga Report/WongaReport";
 import Login from "./Login";
@@ -224,6 +224,7 @@ function AppContent({ logout }) {
       exchangeDateSet: "",
       completionDateSet: "",
       exchanged: "Not Done",
+      completed: "Not Done",
       invoiceSent: "Not Done",
       invoicePaid: "Not Done",
       paymentExpected: "",

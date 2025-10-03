@@ -135,6 +135,7 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
                 <option value="Agent">Agent</option>
                 <option value="Surveyor">Surveyor</option>
                 <option value="Mortgage Advisor">Mortgage Advisor</option>
+                <option value="SDLT Advisor">SDLT Advisor</option>
                 <option value="Other">Other</option>
               </select>
             </div>

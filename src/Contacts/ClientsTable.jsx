@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from "react";
 import "./ClientsTable.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 
 // Helper function to format client names
 function formatClientName(client) {
@@ -24,13 +27,18 @@ function ClientsTable({
   onRestore, 
   onToggleView, 
   showArchived, 
-  onRowClick 
+  onRowClick,
+  favouritesOnly: favouritesOnlyProp
 }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showFavouritesOnly, setShowFavouritesOnly] = useState(Boolean(favouritesOnlyProp));
+  const favouritesOnly = favouritesOnlyProp !== undefined ? favouritesOnlyProp : showFavouritesOnly;
 
   const filteredClients = useMemo(() => {
     const raw = searchTerm.trim().toLowerCase();
-    if (!raw) return clients;
+    const favouritesOnly = favouritesOnlyProp !== undefined ? favouritesOnlyProp : showFavouritesOnly;
+    const base = favouritesOnly ? (clients || []).filter(c => c.favourite === true) : clients;
+    if (!raw) return [...base].sort((a, b) => (b?.favourite === true) - (a?.favourite === true));
     const tokens = raw.split(/\s+/).filter(Boolean);
     const normalize = (v) => String(v ?? "").toLowerCase();
     const normalizeNum = (v) => String(v ?? "").replace(/[^0-9]/g, "");
@@ -45,7 +53,7 @@ function ClientsTable({
       }
       return c.name || "";
     };
-    return clients.filter((c) => {
+    return base.filter((c) => {
       const haystackParts = [];
       haystackParts.push(formatDisplayName(c));
       haystackParts.push(c.phoneNumber, c.email, c.company, c.currentAddress);
@@ -75,8 +83,9 @@ function ClientsTable({
       const haystack = normalize(haystackParts.filter(Boolean).join(" \u2022 "));
       const haystackNum = normalizeNum(haystackParts.filter(Boolean).join(" "));
       return tokens.every(t => haystack.includes(t) || (/[0-9]/.test(t) && haystackNum.includes(t.replace(/[^0-9]/g, ""))));
-    });
-  }, [clients, searchTerm]);
+    })
+    .sort((a, b) => (b?.favourite === true) - (a?.favourite === true));
+  }, [clients, favouritesOnlyProp, showFavouritesOnly, searchTerm]);
 
   return (
     <div className="clients-table-container">
@@ -96,6 +105,11 @@ function ClientsTable({
               + New Client
             </button>
           )}
+          {favouritesOnlyProp === undefined && (
+            <button onClick={() => setShowFavouritesOnly(v => !v)} className="toggle-btn">
+              {showFavouritesOnly ? 'Show All' : 'Favourites'}
+            </button>
+          )}
           <button onClick={onToggleView} className="toggle-btn">
             {showArchived ? "Show Active" : "Show Archived"}
           </button>
@@ -105,6 +119,7 @@ function ClientsTable({
       <table className="clients-table">
         <thead>
           <tr>
+            <th></th>
             <th>Name</th>
             <th>Status</th>
             <th>Client Source</th>
@@ -116,6 +131,20 @@ function ClientsTable({
         <tbody>
           {filteredClients.map((client, index) => (
             <tr key={index} onClick={() => onRowClick(client)} className="clickable-row">
+              <td onClick={(e) => { e.stopPropagation(); }}>
+                <button
+                  aria-label={client.favourite ? 'Unfavourite' : 'Favourite'}
+                  className="icon-button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const { updateClientById } = await import('../lib/clientsApi');
+                    await updateClientById(client.id, { favourite: !client.favourite });
+                  }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FontAwesomeIcon icon={client.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
+                </button>
+              </td>
               <td>{formatClientName(client)}</td>
               <td>
                 <span className={`status-badge ${(client.status || "unknown").toLowerCase().replace(/\s/g, '-')}`}>

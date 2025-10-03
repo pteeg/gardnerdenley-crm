@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from "react";
 import "./ProfessionalsTable.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 
 function ProfessionalsTable({ 
   professionals, 
@@ -14,8 +17,8 @@ function ProfessionalsTable({
 
   const filteredProfessionals = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return professionals;
-    return professionals.filter((p) => (p.name || "").toLowerCase().includes(term));
+    const base = !term ? professionals : professionals.filter((p) => (p.name || "").toLowerCase().includes(term));
+    return [...base].sort((a, b) => (b?.favourite === true) - (a?.favourite === true));
   }, [professionals, searchTerm]);
 
   return (
@@ -45,6 +48,7 @@ function ProfessionalsTable({
       <table className="professionals-table">
         <thead>
           <tr>
+            <th></th>
             <th>Name</th>
             <th>Company</th>
             <th>Phone</th>
@@ -56,11 +60,27 @@ function ProfessionalsTable({
         <tbody>
           {filteredProfessionals.map((professional, index) => (
             <tr key={index} onClick={() => onRowClick(professional)} className="clickable-row">
+              <td onClick={(e) => e.stopPropagation()}>
+                <button
+                  aria-label={professional.favourite ? 'Unfavourite' : 'Favourite'}
+                  className="icon-button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const { updateProfessionalById } = await import('../lib/professionalsApi');
+                    await updateProfessionalById(professional.id, { favourite: !professional.favourite });
+                  }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FontAwesomeIcon icon={professional.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
+                </button>
+              </td>
               <td>{professional.name}</td>
               <td>{professional.company}</td>
               <td>{professional.phoneNumber}</td>
               <td>{professional.email}</td>
-              <td>{professional.type}</td>
+              <td>
+                <span className="type-pill">{professional.type || '—'}</span>
+              </td>
               <td>
                 {showArchived ? (
                   <button

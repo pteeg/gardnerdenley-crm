@@ -80,3 +80,19 @@
   color: #ffffff !important;
   border-color: #555555 !important;
 }
+
+.properties-table th:first-child,
+.properties-table td:first-child {
+  width: 40px;
+  padding-right: 8px;
+}
+
+.properties-table th:last-child,
+.properties-table td:last-child {
+  width: 120px;
+  text-align: right;
+}
+
+.properties-table td .icon-button {
+  padding: 0;
+}

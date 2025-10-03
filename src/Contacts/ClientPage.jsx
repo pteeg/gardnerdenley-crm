@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./ClientPage.css";
 import AddClientForm from "./AddClientForm";
-import PropertySelectionModal from "./PropertySelectionModal";
-import NewPropertyModal from "./NewPropertyModal";
+import PropertySelectionModal from "../Properties/PropertySelectionModal";
+import NewPropertyModal from "../Properties/NewPropertyModal";
 
 // Helper function to format currency nicely (e.g. £1,000)
 function formatCurrencyInput(value) {
@@ -100,7 +100,7 @@ function ClientPage({
   };
 
   const handleCreateAndLinkProperty = async (newProperty) => {
-    const { createProperty, updatePropertyById } = await import('./lib/propertiesApi');
+    const { createProperty, updatePropertyById } = await import('../lib/propertiesApi');
     // Create the property and immediately link it using the returned ID
     const newPropertyId = await createProperty(newProperty);
     await updatePropertyById(newPropertyId, {
@@ -165,18 +165,24 @@ function ClientPage({
           </button>
           <h1 className="client-title">{formatClientNameFromClient(client)}</h1>
             <div className="client-status">
-            <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-')}`}>
-              {client.status || "Active"}
-            </span>
-            {Array.isArray(client.types) && client.types.length > 0 && (
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-                {client.types.map((t, idx) => (
-                  <span key={idx} className="status-badge" style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Type first */}
+              {Array.isArray(client.types) && client.types.length > 0 && (
+                <>
+                  <span className="budget-label">Type:</span>
+                  {client.types.map((t, idx) => (
+                    <span key={idx} className="status-badge" style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}>
+                      {t}
+                    </span>
+                  ))}
+                </>
+              )}
+              {/* Status next */}
+              <span className="budget-label" style={{ marginLeft: '12px' }}>Status:</span>
+              <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-') }`}>
+                {client.status || "Active"}
+              </span>
+            </div>
             <div className="client-budget">
               <span className="budget-label">Budget: </span>
               <span className="budget-value">{client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not specified"}</span>
