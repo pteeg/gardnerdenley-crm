@@ -8,7 +8,8 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
     name: "",
     company: "",
     email: "",
-    phoneNumber: "",
+    phoneMobile: "",
+    phoneWork: "",
     type: passedType || "",
   });
 
@@ -45,7 +46,10 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
       name: formData.name.trim(),
       company: formData.company.trim(),
       email: formData.email.trim(),
-      phoneNumber: formData.phoneNumber.trim(),
+      phoneMobile: formData.phoneMobile.trim(),
+      phoneWork: formData.phoneWork.trim(),
+      // Backward compatibility: keep phoneNumber populated with mobile if provided
+      phoneNumber: (formData.phoneMobile || formData.phoneWork || "").trim(),
       type: formData.type,
     };
 
@@ -57,7 +61,8 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
       name: "",
       company: "",
       email: "",
-      phoneNumber: "",
+      phoneMobile: "",
+      phoneWork: "",
       type: passedType || "",
     });
 
@@ -68,6 +73,7 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
+        <button className="close-button" onClick={onClose}>×</button>
         <h2>
           {passedType ? `Add ${passedType}` : "Add New Professional"}
         </h2>
@@ -92,7 +98,7 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
               name="company"
               value={formData.company}
               onChange={handleChange}
-              placeholder="Company (optional)"
+              placeholder="Company"
             />
           </div>
 
@@ -104,19 +110,29 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email (optional)"
+              placeholder="Email"
             />
           </div>
 
           {/* Phone */}
           <div className="form-group">
-            <label>Phone Number</label>
+            <label>Mobile Number</label>
             <input
               type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
+              name="phoneMobile"
+              value={formData.phoneMobile}
               onChange={handleChange}
-              placeholder="Phone (optional)"
+              placeholder="Mobile"
+            />
+          </div>
+          <div className="form-group">
+            <label>Work Number</label>
+            <input
+              type="tel"
+              name="phoneWork"
+              value={formData.phoneWork}
+              onChange={handleChange}
+              placeholder="Work"
             />
           </div>
 
@@ -142,16 +158,9 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
           )}
 
           {/* Buttons */}
-          <div className="form-buttons">
-            <button
-              type="button"
-              className="cancel-btn"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="save-btn">
-              Add Professional
+          <div className="form-buttons single">
+            <button type="submit" className="save-button">
+              Save
             </button>
           </div>
         </form>

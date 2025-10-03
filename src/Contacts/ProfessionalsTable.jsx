@@ -51,7 +51,6 @@ function ProfessionalsTable({
             <th></th>
             <th>Name</th>
             <th>Company</th>
-            <th>Phone</th>
             <th>Email</th>
             <th>Type</th>
             <th></th>
@@ -76,7 +75,6 @@ function ProfessionalsTable({
               </td>
               <td>{professional.name}</td>
               <td>{professional.company}</td>
-              <td>{professional.phoneNumber}</td>
               <td>{professional.email}</td>
               <td>
                 <span className="type-pill">{professional.type || '—'}</span>

@@ -16,7 +16,10 @@ export async function createProfessional(professional) {
     name: professional.name,
     company: professional.company || "",
     email: professional.email || "",
-    phoneNumber: professional.phoneNumber || "",
+    phoneMobile: professional.phoneMobile || "",
+    phoneWork: professional.phoneWork || "",
+    // keep legacy field populated for UI compatibility
+    phoneNumber: professional.phoneNumber || professional.phoneMobile || professional.phoneWork || "",
     type: professional.type || "",
     favourite: Boolean(professional.favourite) || false,
     archived: false,

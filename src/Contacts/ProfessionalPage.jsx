@@ -5,8 +5,10 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
   const [showEdit, setShowEdit] = useState(false);
   const [displayProfessional, setDisplayProfessional] = useState(professional);
   const [formData, setFormData] = useState({
+    name: professional.name || "",
     company: professional.company || "",
-    phoneNumber: professional.phoneNumber || "",
+    phoneWork: professional.phoneWork || "",
+    phoneMobile: professional.phoneMobile || "",
     email: professional.email || "",
     type: professional.type || "",
   });
@@ -14,8 +16,10 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
   useEffect(() => {
     setDisplayProfessional(professional);
     setFormData({
+      name: professional.name || "",
       company: professional.company || "",
-      phoneNumber: professional.phoneNumber || "",
+      phoneWork: professional.phoneWork || "",
+      phoneMobile: professional.phoneMobile || "",
       email: professional.email || "",
       type: professional.type || "",
     });
@@ -51,10 +55,14 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
             <span className="meta-value">{displayProfessional.company || 'Not provided'}</span>
           </div>
           <div className="header-meta">
-            <span className="meta-label">Phone:</span>
-            <span className="meta-value">{displayProfessional.phoneNumber || 'Not provided'}</span>
+            <span className="meta-label">Work Number:</span>
+            <span className="meta-value">{displayProfessional.phoneWork || displayProfessional.phoneNumber || 'Not provided'}</span>
             <span className="meta-label" style={{ marginLeft: '12px' }}>Email:</span>
             <span className="meta-value">{displayProfessional.email || 'Not provided'}</span>
+          </div>
+          <div className="header-meta">
+            <span className="meta-label">Mobile Number:</span>
+            <span className="meta-value">{displayProfessional.phoneMobile || 'Not provided'}</span>
           </div>
         </div>
         <div className="header-actions">
@@ -115,12 +123,20 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
           <div className="modal-content">
             <h3>Edit Professional</h3>
             <div className="form-group">
+              <label>Name</label>
+              <input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            </div>
+            <div className="form-group">
               <label>Company</label>
               <input value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Phone</label>
-              <input value={formData.phoneNumber} onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} />
+              <label>Work Number</label>
+              <input value={formData.phoneWork} onChange={(e) => setFormData({ ...formData, phoneWork: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Mobile Number</label>
+              <input value={formData.phoneMobile} onChange={(e) => setFormData({ ...formData, phoneMobile: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Email</label>
@@ -141,7 +157,11 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
             <div className="modal-buttons">
               <button className="save-btn" onClick={async () => {
                 const { updateProfessionalById } = await import('../lib/professionalsApi');
-                await updateProfessionalById(professional.id, { ...formData });
+                await updateProfessionalById(professional.id, { 
+                  ...formData,
+                  // keep legacy phoneNumber in sync for any older views
+                  phoneNumber: formData.phoneWork || formData.phoneMobile || displayProfessional.phoneNumber || ""
+                });
                 // Optimistically reflect changes immediately
                 setDisplayProfessional(prev => ({ ...prev, ...formData }));
                 setShowEdit(false);
