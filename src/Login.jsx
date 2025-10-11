@@ -5,28 +5,25 @@ import { faEye } from "@fortawesome/free-regular-svg-icons";
 import glassesSmiley from "./assets/glasses-smiley.jpg";
 import "./Login.css";
 import gdLogo from "./assets/new-gd-logo.jpg";
+import { useAuth } from "./AuthContext";
 
-function Login({ onLogin }) {
+function Login() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simple password check - in production, this would be more secure
-    const correctPassword = "Rubycocobabu2025";
+    const result = await login(email, password);
     
-    if (password === correctPassword) {
-      // Store authentication in sessionStorage
-      sessionStorage.setItem("isAuthenticated", "true");
-      sessionStorage.setItem("loginTime", Date.now().toString());
-      onLogin();
-    } else {
-      setError("Incorrect password. Please try again.");
+    if (!result.success) {
+      setError(result.error);
       setPassword("");
     }
     
@@ -43,6 +40,20 @@ function Login({ onLogin }) {
         
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-input"
+              placeholder="Enter email"
+              required
+              disabled={isLoading}
+              autoFocus
+            />
+          </div>
+          
+          <div className="form-group">
             <div className="password-input-container">
               <input
                 type={showPassword ? "text" : "password"}
@@ -53,7 +64,6 @@ function Login({ onLogin }) {
                 placeholder="Enter password"
                 required
                 disabled={isLoading}
-                autoFocus
               />
               <button
                 type="button"
@@ -80,7 +90,7 @@ function Login({ onLogin }) {
           <button 
             type="submit" 
             className="login-button"
-            disabled={isLoading || !password.trim()}
+            disabled={isLoading || !email.trim() || !password.trim()}
           >
             {isLoading ? "Signing In..." : "Sign In"}
           </button>

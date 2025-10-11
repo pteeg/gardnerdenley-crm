@@ -434,7 +434,7 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={login} />;
+    return <Login />;
   }
 
   return <AppContent logout={logout} />;
