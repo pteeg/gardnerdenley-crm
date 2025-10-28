@@ -35,16 +35,47 @@ function Contacts({
   const [showArchivedProfessionals, setShowArchivedProfessionals] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
-  // When asked to open a specific client by name, switch to Clients and select it
+  // Helper to format a client's display name like elsewhere in the app
+  const formatClientName = (c) => {
+    if (!c) return "";
+    if (c.spouse1FirstName && c.spouse2FirstName) {
+      return c.spouse1Surname
+        ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+        : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+    }
+    if (c.spouse1FirstName || c.spouse1Surname) {
+      const first = c.spouse1FirstName || "";
+      const surname = c.spouse1Surname || "";
+      return [first, surname].filter(Boolean).join(" ");
+    }
+    return c.name || "";
+  };
+
+  // When asked to open a specific contact by name, try clients first; if not found, try professionals
   React.useEffect(() => {
     if (!openClientName) return;
-    setSubPage("Clients");
-    const found = clients.find(c => c.name === openClientName);
-    if (found) {
-      setSelectedClient(found);
+    // Try client by exact stored name
+    let foundClient = clients.find(c => c.name === openClientName);
+    // Try by formatted display name
+    if (!foundClient) {
+      foundClient = clients.find(c => formatClientName(c) === openClientName);
+    }
+    if (foundClient) {
+      setSubPage("Clients");
+      setSelectedClient(foundClient);
+      // Ensure view starts at top after navigation
+      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 0);
+    } else {
+      // Fallback: try professionals by name
+      const foundPro = professionals.find(p => p.name === openClientName);
+      if (foundPro) {
+        setSubPage("Professionals");
+        setSelectedProfessional(foundPro);
+        setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 0);
+      }
     }
     if (onConsumeOpenClient) onConsumeOpenClient();
-  }, [openClientName, clients]);
+  }, [openClientName, clients, professionals]);
 
   const handleArchiveClient = async (clientToArchive) => {
     if (clientToArchive.id) {
@@ -387,6 +418,8 @@ function Contacts({
                 onSave={async (newClient) => {
                   await createClient({ ...newClient, archived: false, properties: [] });
                 }}
+                allClients={clients}
+                professionals={professionals}
               />
             )}
           </>
@@ -474,6 +507,7 @@ function Contacts({
             onBack={() => setSelectedProfessional(null)}
             properties={properties}
             salesProgressions={salesProgressions}
+            clients={clients}
           />
         )}
       </div>

@@ -211,7 +211,9 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
                 {property.offers.map((o, idx) => (
                   <div key={idx} className="offer-entry">
                     <span>
-                      {formatOfferClientDisplay()} {`${new Date(o.date).toLocaleDateString()}: £${Number(o.amount).toLocaleString()}${o.status ? ` (${o.status})` : ''}`}
+                      {o && o.amount !== undefined && o.amount !== null && o.amount !== ""
+                        ? `${formatOfferClientDisplay()} ${new Date(o.date).toLocaleDateString()}: £${Number(o.amount).toLocaleString()}${o.status ? ` (${o.status})` : ''}`
+                        : `${formatOfferClientDisplay()} ${new Date(o.date).toLocaleDateString()}: ${o?.status || 'Event'}`}
                     </span>
                   </div>
                 ))}

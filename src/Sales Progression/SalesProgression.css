@@ -15,9 +15,23 @@
   overflow-x: hidden; /* Prevent horizontal overflow at content level */
 }
 
+.sp-subtitle {
+  font-size: 1.75rem;
+  font-weight: 550; /* slightly less bold */
+  color: #555;
+  margin: 0 0 12px 0;
+  font-family: sans-serif;
+}
+
 .sales-table-container {
-  overflow-x: auto;
+  overflow-x: auto; /* allow horizontal scroll */
   position: relative;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.sales-table-container::-webkit-scrollbar { /* WebKit */
+  display: none;
+  height: 0;
 }
 
 .sales-table {
@@ -66,12 +80,18 @@
 }
 
 .sales-progression-container {
-  overflow-x: auto;
-  overflow-y: visible; /* <- allow vertical overflow */
+  overflow-x: auto; /* allow horizontal scroll */
+  overflow-y: visible; /* allow vertical overflow */
   width: 100%;
   max-width: calc(100vw - 240px); /* Full viewport width minus sidebar width */
   position: relative;  /* <- establish positioning context for popups */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
 }
+.sales-progression-container::-webkit-scrollbar { display: none; height: 0; }
+
+.sales-progression-content { scrollbar-width: none; -ms-overflow-style: none; }
+.sales-progression-content::-webkit-scrollbar { display: none; height: 0; }
 
 .sales-progression-table {
   border-collapse: separate;
@@ -88,6 +108,9 @@
   white-space: nowrap;
   border: none;
 }
+
+/* Align headers with left-aligned cell content (helps Fallen Through view) */
+.sales-progression-table th { text-align: left; }
 
 /* Make only Client column sticky */
 .sales-progression-table th:nth-child(1),

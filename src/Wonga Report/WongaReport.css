@@ -129,6 +129,12 @@
   border-bottom: 1px solid #ddd;
 }
 
+/* Tighten Forecast Completion column so text doesn't create large gap */
+.wonga-table .forecast-col {
+  white-space: nowrap;
+  width: 1%; /* shrink-to-fit */
+}
+
 .wonga-table tr:nth-child(even) {
   background-color: #f9f9f9;
 }

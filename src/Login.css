@@ -201,6 +201,88 @@
   margin: 0;
 }
 
+/* Reset Password Styles */
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #999;
+  font-size: 16px;
+  z-index: 1;
+}
+
+.input-with-icon .form-input {
+  padding-left: 40px;
+}
+
+.message {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.back-to-login-button {
+  background: none;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  margin: 0 auto 12px;
+}
+
+.back-to-login-button:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #999;
+  color: #333;
+}
+
+.back-to-login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.forgot-password-link {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.forgot-password-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.forgot-password-button:hover:not(:disabled) {
+  color: #333;
+}
+
+.forgot-password-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 480px) {
   .login-container {

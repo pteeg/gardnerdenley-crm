@@ -2,23 +2,31 @@ import React, { useState, useEffect } from "react";
 import "./NewProfessionalModal.css";
 import { v4 as uuidv4 } from "uuid"; // use the same UUID generator
 
-function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
+function NewProfessionalModal({ onClose, onAddProfessional, passedType = "", type, initialName = "" }) {
+  const resolvedType = passedType || type || "";
   // Initialise form state
   const [formData, setFormData] = useState({
-    name: "",
+    name: initialName || "",
     company: "",
     email: "",
     phoneMobile: "",
     phoneWork: "",
-    type: passedType || "",
+    type: resolvedType || "",
   });
 
   // Update the form when a passedType is given later
   useEffect(() => {
-    if (passedType) {
-      setFormData((prev) => ({ ...prev, type: passedType }));
+    if (resolvedType) {
+      setFormData((prev) => ({ ...prev, type: resolvedType }));
     }
-  }, [passedType]);
+  }, [resolvedType]);
+
+  // Prefill the name when provided
+  useEffect(() => {
+    if (initialName) {
+      setFormData((prev) => ({ ...prev, name: initialName }));
+    }
+  }, [initialName]);
 
   // Handle input updates
   const handleChange = (e) => {
@@ -75,7 +83,7 @@ function NewProfessionalModal({ onClose, onAddProfessional, passedType = "" }) {
       <div className="modal-content">
         <button className="close-button" onClick={onClose}>×</button>
         <h2>
-          {passedType ? `Add ${passedType}` : "Add New Professional"}
+          {resolvedType ? `Add ${resolvedType}` : "Add New Professional"}
         </h2>
 
         <form onSubmit={handleSubmit}>

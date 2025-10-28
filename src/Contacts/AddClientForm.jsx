@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import "./AddClientForm.css";
+import NewProfessionalModal from "./NewProfessionalModal";
 
-function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
+function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false, allClients = [], professionals = [] }) {
   const [client, setClient] = useState(() => {
     const formattedBudget = initialData.maxBudget
       ? "£" + Number(initialData.maxBudget).toLocaleString()
@@ -38,6 +40,38 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
       searchStartDate: initialData.searchStartDate || ""
     };
   });
+
+  // Referral typeahead state
+  const [referralQuery, setReferralQuery] = useState(initialData.referralContact || "");
+  const [showReferralSuggestions, setShowReferralSuggestions] = useState(false);
+  const [showNewProfessionalModal, setShowNewProfessionalModal] = useState(false);
+
+  const formatClientName = (c) => {
+    if (!c) return "";
+    if (c.spouse1FirstName && c.spouse2FirstName) {
+      return c.spouse1Surname
+        ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+        : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+    }
+    if (c.spouse1FirstName || c.spouse1Surname) {
+      const first = c.spouse1FirstName || "";
+      const surname = c.spouse1Surname || "";
+      return [first, surname].filter(Boolean).join(" ");
+    }
+    return c.name || "";
+  };
+
+  const allReferralNames = useMemo(() => {
+    const clientNames = (allClients || []).map(formatClientName).filter(Boolean);
+    const proNames = (professionals || []).filter(p => !p.archived).map(p => p.name).filter(Boolean);
+    return Array.from(new Set([...clientNames, ...proNames]));
+  }, [allClients, professionals]);
+
+  const referralOptions = useMemo(() => {
+    if (!referralQuery) return [];
+    const q = referralQuery.toLowerCase();
+    return allReferralNames.filter(n => n.toLowerCase().includes(q)).slice(0, 10);
+  }, [allReferralNames, referralQuery]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -229,18 +263,96 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
                     <option value="Website">Website</option>
                     <option value="Referral">Referral</option>
                     <option value="Search Engine">Search Engine</option>
-                    <option value="AI (Chat GPT)">AI (Chat GPT)</option>
+                    <option value="AI">AI</option>
                     <option value="Social Media">Social Media</option>
                   </select>
                 </div>
                 {client.clientSource === "Referral" && (
-                  <div className="tile-field" style={{ gridColumn: '1 / -1' }}>
-                    <input
-                      name="referralContact"
-                      value={client.referralContact}
-                      onChange={handleChange}
-                      placeholder="Referral Contact (client/professional)"
-                    />
+                  <div className="tile-field" style={{ gridColumn: '1 / -1', position: 'relative' }}>
+                    {allReferralNames.includes(referralQuery) ? (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#e6f0fb', border: '1px solid #2b6cb0', color: '#2b6cb0', borderRadius: 16, padding: '6px 10px' }}>
+                        <span>{referralQuery}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setReferralQuery(""); setClient(prev => ({ ...prev, referralContact: "" })); }}
+                          aria-label="Remove referral contact"
+                          style={{ background: 'transparent', border: 'none', color: '#2b6cb0', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          name="referralContact"
+                          value={referralQuery}
+                          onFocus={() => setShowReferralSuggestions(true)}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setReferralQuery(v);
+                            setClient(prev => ({ ...prev, referralContact: v }));
+                          }}
+                          placeholder="Start typing to search contacts"
+                          autoComplete="off"
+                          style={{ width: '100%' }}
+                        />
+                        {showReferralSuggestions && referralQuery.trim().length > 0 && (
+                          <ul
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              zIndex: 10,
+                              background: '#fff',
+                              border: '1px solid #ddd',
+                              borderRadius: 4,
+                              margin: 0,
+                              padding: 0,
+                              listStyle: 'none',
+                              maxHeight: 200,
+                              overflowY: 'auto'
+                            }}
+                            onMouseDown={(e) => e.preventDefault()} // keep input focus
+                          >
+                            {referralOptions.map((name, idx) => (
+                              <li
+                                key={idx}
+                                onClick={() => {
+                                  setReferralQuery(name);
+                                  setClient(prev => ({ ...prev, referralContact: name }));
+                                  setShowReferralSuggestions(false);
+                                }}
+                                style={{ padding: '8px 10px', cursor: 'pointer' }}
+                              >
+                                {name}
+                              </li>
+                            ))}
+                            {referralOptions.length === 0 && (
+                              <li style={{ padding: '8px 10px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowReferralSuggestions(false);
+                                    setShowNewProfessionalModal(true);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    background: '#f3f4f6',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 6,
+                                    padding: '6px 8px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Add “{referralQuery}” as new professional
+                                </button>
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -327,6 +439,28 @@ function AddClientForm({ onClose, onSave, initialData = {}, isEdit = false }) {
           </div>
         </div>
       </div>
+      {showNewProfessionalModal && createPortal(
+        (
+          <NewProfessionalModal
+            onClose={() => setShowNewProfessionalModal(false)}
+            initialName={referralQuery}
+            onAddProfessional={async (newPro) => {
+              try {
+                const { createProfessional } = await import("../lib/professionalsApi");
+                const proWithDefaults = { ...newPro, name: referralQuery || newPro.name, archived: false };
+                await createProfessional(proWithDefaults);
+                const name = proWithDefaults.name || "";
+                setReferralQuery(name);
+                setClient(prev => ({ ...prev, referralContact: name }));
+                setShowNewProfessionalModal(false);
+              } catch (e) {
+                console.error("Failed to add professional from referral picker:", e);
+              }
+            }}
+          />
+        ),
+        document.body
+      )}
     </div>
   );
 }

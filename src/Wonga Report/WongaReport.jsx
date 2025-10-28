@@ -22,6 +22,13 @@ function formatClientName(clientName, clients = []) {
   return clientName || "Unknown";
 }
 
+// Format a stored ISO date (yyyy-mm-dd) to dd-mm-yyyy for display
+function formatDateDMY(dateStr) {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
 const WongaReport = ({ data, clients = [], properties = [] }) => {
   // Filter for completed deals only
   const completedDeals = data.filter((row) => row.dealComplete);
@@ -38,7 +45,8 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
       if (!row?.id) return;
       const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
       const next = row.invoicePaid === "Done" ? "Not Done" : "Done";
-      await updateSalesProgressionById(row.id, { invoicePaid: next });
+      const payload = { invoicePaid: next, dealComplete: next === "Done" };
+      await updateSalesProgressionById(row.id, payload);
     } catch (e) {
       console.error("Failed to toggle invoicePaid from WongaReport:", e);
     }
@@ -146,10 +154,10 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
                     <th>Value</th>
                     <th>Fee %</th>
                     <th>Net GD Fee £</th>
-                    <th>Forecast Completion</th>
+                    <th className="forecast-col">Forecast Completion</th>
                     <th>Paid?</th>
                     <th>Disposal</th>
-                    <th>Address</th>
+                    <th>Property</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -183,7 +191,19 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
                           <td>{propertyValue ? `£${propertyValue.toLocaleString()}` : "—"}</td>
                           <td>{feePercentage !== null ? `${feePercentage}%` : "—"}</td>
                           <td>{netFee ? `£${netFee.toLocaleString()}` : "—"}</td>
-                          <td>{row.completionDateSet || row.targetCompletionDate || "—"}</td>
+                          <td className="forecast-col">
+                            {(() => {
+                              const primary = row.completionDateSet || row.targetCompletionDate;
+                              const payment = row.paymentExpected;
+                              const primaryFmt = formatDateDMY(primary);
+                              const paymentFmt = formatDateDMY(payment);
+                              if (!primaryFmt && !paymentFmt) return "—";
+                              if (primaryFmt && paymentFmt && primary !== payment) {
+                                return `${primaryFmt} (Expected ${paymentFmt})`;
+                              }
+                              return primaryFmt || paymentFmt || "—";
+                            })()}
+                          </td>
                           <td>
                             <button
                               onClick={() => toggleInvoicePaid(row)}

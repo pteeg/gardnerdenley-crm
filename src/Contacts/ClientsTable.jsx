@@ -152,7 +152,7 @@ function ClientsTable({
                 </span>
               </td>
               <td>{client.clientSource || "—"}</td>
-              <td>£{Number(client.maxBudget).toLocaleString()}</td>
+              <td>{client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not Specified"}</td>
               <td>{client.phoneNumber}</td>
               <td>
                 {showArchived ? (

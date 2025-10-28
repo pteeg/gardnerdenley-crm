@@ -90,6 +90,7 @@ const WongaChart = ({ salesProgressions = [], startYear }) => {
   };
 
   const { months, paid, pending, totals, paidDetails, pendingDetails } = processChartData();
+  const maxTotal = totals.length ? Math.max(...totals) : 0;
 
   // Chart configuration
   const chartData = {
@@ -143,7 +144,7 @@ const WongaChart = ({ salesProgressions = [], startYear }) => {
               font: { weight: 'bold', size: 12 },
               align: 'end',
               anchor: 'end',
-              offset: 4,
+              offset: 12,
               clip: false,
               formatter: function(value, ctx) {
                 const i = ctx.dataIndex;
@@ -162,9 +163,17 @@ const WongaChart = ({ salesProgressions = [], startYear }) => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    // Keep modest outer padding; most spacing will be handled by legend padding and y.grace
+    layout: {
+      padding: {
+        top: 24,
+      },
+    },
     plugins: {
       legend: {
         position: 'top',
+        // Add spacing between legend and chart area
+        padding: 16,
       },
       title: {
         display: true,
@@ -173,6 +182,7 @@ const WongaChart = ({ salesProgressions = [], startYear }) => {
           size: 16,
           weight: 'bold',
         },
+        padding: { bottom: 8 },
       },
       tooltip: {
         displayColors: false,
@@ -222,6 +232,9 @@ const WongaChart = ({ salesProgressions = [], startYear }) => {
           text: 'Amount (£)',
         },
         beginAtZero: true,
+        // Add headroom above tallest bar to avoid overlapping legend
+        grace: '15%',
+        suggestedMax: maxTotal ? Math.ceil(maxTotal * 1.1) : undefined,
         grid: {
           display: false,
         },

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./ProfessionalPage.css";
 
-function ProfessionalPage({ professional, onBack, properties = [], salesProgressions = [] }) {
+function ProfessionalPage({ professional, onBack, properties = [], salesProgressions = [], clients = [] }) {
   const [showEdit, setShowEdit] = useState(false);
   const [displayProfessional, setDisplayProfessional] = useState(professional);
   const [formData, setFormData] = useState({
@@ -38,6 +38,9 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
     const progression = salesProgressions.find(sp => sp.address === prop.name);
     return progression?.dealComplete;
   });
+
+  // Referrals: clients whose referralContact matches this professional's name
+  const referredClients = (clients || []).filter(c => (c.referralContact || "") === (displayProfessional?.name || professional.name));
 
   return (
     <div className="professional-page">
@@ -76,6 +79,31 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
       <div className="professional-content">
         {/* Left Column */}
         <div className="professional-main">
+          <div className="professional-card">
+            <h2 className="card-title">Referrals ({referredClients.length})</h2>
+            {referredClients.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {referredClients.map((c, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const event = new CustomEvent('openClientByName', { detail: { name: c.name } });
+                      window.dispatchEvent(event);
+                    }}
+                    style={{
+                      background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
+                      borderRadius: 16, padding: '6px 10px', cursor: 'pointer'
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-text">No referrals recorded.</p>
+            )}
+          </div>
           <div className="professional-card">
             <h2 className="card-title">Active Properties Represented</h2>
             {activeProperties.length > 0 ? (

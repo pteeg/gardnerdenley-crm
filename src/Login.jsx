@@ -6,6 +6,7 @@ import glassesSmiley from "./assets/glasses-smiley.jpg";
 import "./Login.css";
 import gdLogo from "./assets/new-gd-logo.jpg";
 import { useAuth } from "./AuthContext";
+import ResetPassword from "./ResetPassword";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -29,6 +31,10 @@ function Login() {
     
     setIsLoading(false);
   };
+
+  if (showResetPassword) {
+    return <ResetPassword onBackToLogin={() => setShowResetPassword(false)} />;
+  }
 
   return (
     <div className="login-container">
@@ -94,6 +100,17 @@ function Login() {
           >
             {isLoading ? "Signing In..." : "Sign In"}
           </button>
+          
+          <div className="forgot-password-link">
+            <button 
+              type="button"
+              className="forgot-password-button"
+              onClick={() => setShowResetPassword(true)}
+              disabled={isLoading}
+            >
+              Forgot Password?
+            </button>
+          </div>
         </form>
         
         <div className="login-footer">

@@ -60,6 +60,10 @@ function ClientPage({
   const [associateSearch, setAssociateSearch] = useState("");
   const [selectedAssociate, setSelectedAssociate] = useState(null);
   const [associateRelation, setAssociateRelation] = useState("");
+  
+  const [showFallThroughModal, setShowFallThroughModal] = useState(false);
+  const [fallThroughReason, setFallThroughReason] = useState("");
+  const [pendingUnlinkProperty, setPendingUnlinkProperty] = useState(null);
 
   const [editedClient, setEditedClient] = useState(client);
   const [originalName, setOriginalName] = useState(client?.name || "");
@@ -92,6 +96,75 @@ function ClientPage({
       if (!remainingAccepted && client.status !== "Searching") {
         updateClientStatus(client.name, "Searching");
       }
+    }
+  };
+
+  const handleFallenThrough = async (propertyName, reason) => {
+    try {
+      const property = allProperties.find(p => p.name === propertyName);
+      if (property?.id) {
+        const { updatePropertyById } = await import('../lib/propertiesApi');
+        const originalStatus = property.originalMarketStatus || 'On Market';
+        // Append a timeline entry to offers for audit trail
+        const offers = Array.isArray(property.offers) ? [...property.offers] : [];
+        offers.push({ date: new Date().toISOString(), amount: null, status: 'Fallen Through' });
+        await updatePropertyById(property.id, {
+          offerStatus: 'Fallen Through',
+          status: originalStatus,
+          offers
+        });
+        // Reflect in any progression rows (fall-through removes from Wonga)
+        try {
+          const { updateSalesProgressionById } = await import('../lib/salesProgressionsApi');
+          const { getDocs, query, collection, where } = await import('firebase/firestore');
+          const { db } = await import('../lib/firebase');
+          const spCol = collection(db, 'salesProgressions');
+          const q = query(spCol, where('client', '==', client.name), where('address', '==', propertyName));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const target = snap.docs[0];
+            await updateSalesProgressionById(target.id, { fallenThrough: true, fallThroughReason: reason, dealComplete: false });
+          }
+        } catch (e) { console.warn('Progression sync on fall-through failed (non-fatal):', e); }
+        await updateClientStatus(client.name, 'Searching');
+      }
+    } catch (e) {
+      console.error('Error handling fallen through:', e);
+    }
+  };
+
+  const handleRevive = async (propertyName) => {
+    try {
+      const property = allProperties.find(p => p.name === propertyName);
+      if (property?.id) {
+        const { updatePropertyById } = await import('../lib/propertiesApi');
+        // Append a timeline entry to offers for audit trail
+        const offers = Array.isArray(property.offers) ? [...property.offers] : [];
+        offers.push({ date: new Date().toISOString(), amount: null, status: 'Revived' });
+        await updatePropertyById(property.id, {
+          offerStatus: 'Accepted',
+          status: 'Matched',
+          offers
+        });
+        // Sales progression: clear fallenThrough, set dealComplete based on invoicePaid
+        try {
+          const { updateSalesProgressionById } = await import('../lib/salesProgressionsApi');
+          const { getDocs, query, collection, where } = await import('firebase/firestore');
+          const { db } = await import('../lib/firebase');
+          const spCol = collection(db, 'salesProgressions');
+          const q = query(spCol, where('client', '==', client.name), where('address', '==', propertyName));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const target = snap.docs[0];
+            const rowData = target.data();
+            const newComplete = rowData.invoicePaid === 'Done';
+            await updateSalesProgressionById(target.id, { fallenThrough: false, dealComplete: newComplete });
+          }
+        } catch (e) { console.warn('Progression sync on revive failed (non-fatal):', e); }
+        await updateClientStatus(client.name, 'Matched');
+      }
+    } catch (e) {
+      console.error('Error handling revive:', e);
     }
   };
 
@@ -263,8 +336,25 @@ function ClientPage({
                 <span className="search-value">{client.clientSource || "Not provided"}</span>
                 {client.clientSource === "Referral" && (
                   <div className="referral-detail">
-                    <span className="referral-label">Referral Contact:</span>
-                    <span className="referral-value">{client.referralContact || "(not contact listed)"}</span>
+                    {client.referralContact ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = client.referralContact;
+                          const event = new CustomEvent('openClientByName', { detail: { name } });
+                          window.dispatchEvent(event);
+                        }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
+                          borderRadius: 16, padding: '4px 10px', cursor: 'pointer'
+                        }}
+                      >
+                        {client.referralContact}
+                      </button>
+                    ) : (
+                      <span className="referral-value">(not contact listed)</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -324,7 +414,7 @@ function ClientPage({
                           setShowNoteModal(true);
                         }}
                       >
-                        <i className="fa-solid fa-pen" style={{ color: '#555555' }} />
+                        <i className="fa-solid fa-pen" style={{ color: '#555555' }} /> 
                       </button>
                       <button
                         className="icon-button danger"
@@ -332,6 +422,8 @@ function ClientPage({
                         onClick={async () => {
                           if (!window.confirm("Delete this note?")) return;
                           const notes = (client.notes || []).filter((_, i) => i !== idx);
+                          // Optimistically update local view
+                          client.notes = notes;
                           await updateClientInfo(client.name, { notes });
                         }}
                       >
@@ -353,6 +445,7 @@ function ClientPage({
 
             <div className="property-cards">
               {linkedProperties.map((property) => {
+                const isPropertyCompleted = Array.isArray(salesProgressions) && salesProgressions.some(sp => sp && sp.client === client.name && sp.address === property.name && sp.invoicePaid === 'Done' && !sp.fallenThrough);
                 return (
                   <div key={property.name} className="prospective-property-card">
                     <div className="property-main-info">
@@ -364,7 +457,9 @@ function ClientPage({
                         <div className="offer-history">
                           {property.offers.map((o, idx) => (
                             <p key={idx} className="property-price">
-                              Offer Logged {new Date(o.date).toLocaleDateString()}: £{Number(o.amount).toLocaleString()} {o.status && `(${o.status})`}
+                              {o && o.amount !== undefined && o.amount !== null && o.amount !== ""
+                                ? `Offer Logged ${new Date(o.date).toLocaleDateString()}: £${Number(o.amount).toLocaleString()} ${o.status ? `(${o.status})` : ''}`
+                                : `${new Date(o.date).toLocaleDateString()}: ${o?.status || 'Event'}`}
                             </p>
                           ))}
                         </div>
@@ -373,7 +468,7 @@ function ClientPage({
                     <div className="property-actions">
                       {property.offerStatus && property.offerStatus !== "None" ? (
                         <div className="offer-status">
-                          <span className="offer-label">Offer: {property.offerStatus}</span>
+                          <span className="offer-label">Offer: {property.offerStatus}{isPropertyCompleted ? ' • Completed' : ''}</span>
                           {property.offerStatus === "Pending" && (
                             <div className="offer-status-buttons">
                               <button
@@ -391,7 +486,7 @@ function ClientPage({
                                 Accept
                               </button>
                               <button
-                                className="decline-btn"
+                                className="decline-btn clearly in"
                                 onClick={() => {
                                   // Decline last pending offer and return to Log Offer state
                                   updatePropertyOffer(property.name, {
@@ -406,12 +501,26 @@ function ClientPage({
                               </button>
                             </div>
                           )}
-                          <button
-                            className="remove-btn"
-                            onClick={() => handleUnlinkProperty(property.name)}
-                          >
-                            Remove
-                          </button>
+                          {property.offerStatus === "Accepted" && !isPropertyCompleted && (
+                            <button
+                              className="remove-btn"
+                              onClick={() => {
+                                setPendingUnlinkProperty(property.name);
+                                setFallThroughReason('');
+                                setShowFallThroughModal(true);
+                              }}
+                            >
+                              Fallen Through
+                            </button>
+                          )}
+                          {property.offerStatus === "Fallen Through" && (
+                            <button
+                              className="offer-btn"
+                              onClick={() => handleRevive(property.name)}
+                            >
+                              Revive
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="offer-actions">
@@ -490,6 +599,8 @@ function ClientPage({
           }}
           onClose={handleCancelEdit}
           isEdit={true}
+          allClients={allClients}
+          professionals={professionals}
         />
       )}
 
@@ -674,6 +785,34 @@ function ClientPage({
           onSave={handleCreateAndLinkProperty}
           professionals={professionals}
         />
+      )}
+
+      {/* Fallen Through Modal */}
+      {showFallThroughModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 500 }}>
+            <h3>Reason for Fall-Through</h3>
+            <p style={{ marginTop: 0, color: '#555' }}>This deal will be moved to "Archived".</p>
+            <div className="form-group">
+              <textarea
+                value={fallThroughReason}
+                onChange={(e) => setFallThroughReason(e.target.value)}
+                placeholder="Enter reason"
+                style={{ width: '100%', minHeight: 120 }}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button className="cancel-btn" onClick={() => { setShowFallThroughModal(false); setPendingUnlinkProperty(null); }}>Cancel</button>
+              <button className="save-btn" onClick={async () => {
+                if (pendingUnlinkProperty) {
+                  await handleFallenThrough(pendingUnlinkProperty, fallThroughReason);
+                }
+                setShowFallThroughModal(false);
+                setPendingUnlinkProperty(null);
+              }}>Save</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

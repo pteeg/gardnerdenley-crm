@@ -389,6 +389,7 @@ function AppContent({ logout }) {
         <SalesProgression
           data={salesProgressions}
           setData={setSalesProgressions}
+          clients={clients}
           properties={properties}
           onRemoveRow={async (clientName, propertyName) => {
             // Reuse cancel flow from Contacts/App
