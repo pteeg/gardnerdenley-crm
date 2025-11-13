@@ -73,7 +73,10 @@ function ComparablesSelectionModal({
   const calculatePricePerSqFt = (price, floorSize) => {
     if (!price || !floorSize) return "—";
     const numericPrice = typeof price === 'string' ? price.replace(/[^0-9]/g, '') : price;
-    const numericFloorSize = parseFloat(floorSize);
+    // Remove commas and other non-numeric characters from floorSize before parsing
+    const numericFloorSize = typeof floorSize === 'string' 
+      ? parseFloat(floorSize.replace(/[^0-9.]/g, '')) 
+      : parseFloat(floorSize);
     if (!numericPrice || !numericFloorSize || numericFloorSize === 0) return "—";
     const pricePerSqFt = Number(numericPrice) / numericFloorSize;
     return `£${Math.round(pricePerSqFt).toLocaleString()}`;
