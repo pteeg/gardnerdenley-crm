@@ -15,6 +15,7 @@ export async function createProperty(property) {
   const payload = {
     name: property.name,
     brief: property.brief || property.description || "",
+    description: property.description || "",
     price: property.price || "",
     status: property.status || (property.onMarket ? "On Market" : "Off Market"),
     archived: false,
@@ -24,6 +25,14 @@ export async function createProperty(property) {
     offerStatus: property.offerStatus || null,
     offerAmount: property.offerAmount || null,
     vendor: property.vendor || "",
+    ownerDetails: property.ownerDetails || "",
+    floorSize: property.floorSize || "",
+    bedrooms: property.bedrooms || "",
+    bathrooms: property.bathrooms || "",
+    style: property.style || "",
+    receptions: property.receptions || "",
+    parking: property.parking || "",
+    land: property.land || "",
     createdAt: Date.now(),
   };
   const ref = await addDoc(propertiesCol, payload);
