@@ -374,6 +374,11 @@ function Contacts({
                 type="button"
               >Agent</button>
               <button
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Developer') ? 'active' : ''}`}
+                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Developer' })}
+                type="button"
+              >Developer</button>
+              <button
                 className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Other') ? 'active' : ''}`}
                 onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Other' })}
                 type="button"

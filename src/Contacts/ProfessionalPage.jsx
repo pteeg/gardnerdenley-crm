@@ -179,6 +179,7 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
                 <option value="Surveyor">Surveyor</option>
                 <option value="Mortgage Advisor">Mortgage Advisor</option>
                 <option value="SDLT Advisor">SDLT Advisor</option>
+                <option value="Developer">Developer</option>
                 <option value="Other">Other</option>
               </select>
             </div>
