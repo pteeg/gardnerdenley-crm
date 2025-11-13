@@ -41,7 +41,14 @@ export async function createProperty(property) {
 
 export async function updatePropertyById(id, updates) {
   const ref = doc(db, "properties", id);
-  await updateDoc(ref, updates);
+  // Remove undefined values from updates (Firestore doesn't allow undefined)
+  const cleanedUpdates = {};
+  Object.keys(updates).forEach(key => {
+    if (updates[key] !== undefined) {
+      cleanedUpdates[key] = updates[key];
+    }
+  });
+  await updateDoc(ref, cleanedUpdates);
 }
 
 export async function toggleArchiveProperty(id, archived) {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import './PropertiesPage.css';
 import Sidebar from '../Sidebar';
 import NewPropertyModal from './NewPropertyModal';
@@ -11,6 +11,21 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Sync selectedProperty with properties array when it updates (especially for comparables)
+  useEffect(() => {
+    if (selectedProperty) {
+      const updatedProperty = properties.find(p => p.id === selectedProperty.id);
+      if (updatedProperty) {
+        // Check if comparables array has changed
+        const currentComparables = JSON.stringify(selectedProperty.comparables || []);
+        const newComparables = JSON.stringify(updatedProperty.comparables || []);
+        if (currentComparables !== newComparables) {
+          setSelectedProperty(updatedProperty);
+        }
+      }
+    }
+  }, [properties, selectedProperty?.id]);
 
   const filteredProperties = properties.filter(property => {
     if (showArchived) return property.archived;
@@ -106,10 +121,18 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
     
     // Update the selectedProperty with the new data
     if (selectedProperty && selectedProperty.id === id) {
-      setSelectedProperty(prev => ({
-        ...prev,
-        ...updatedData
-      }));
+      setSelectedProperty(prev => {
+        // For arrays like comparables, replace them entirely rather than merging
+        const merged = { ...prev };
+        Object.keys(updatedData).forEach(key => {
+          if (Array.isArray(updatedData[key])) {
+            merged[key] = updatedData[key];
+          } else {
+            merged[key] = updatedData[key];
+          }
+        });
+        return merged;
+      });
     }
   };
 
@@ -208,6 +231,8 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
             professionals={professionals}
             onUpdateProperty={handleUpdateProperty}
             onDeleteProperty={handleDeleteProperty}
+            allProperties={properties}
+            onSelectProperty={(property) => setSelectedProperty(property)}
           />
         )}
       </div>

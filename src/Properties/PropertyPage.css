@@ -372,6 +372,162 @@
   margin: 0;
 }
 
+/* Tabs */
+.property-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e9ecef;
+  background: white;
+  padding: 0 2rem;
+}
+
+.property-tab {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.property-tab:hover {
+  color: #333;
+  background: #f8f9fa;
+}
+
+.property-tab.active {
+  color: #555;
+  border-bottom-color: #555;
+}
+
+/* Comparables */
+.comparables-content {
+  grid-template-columns: 1fr;
+}
+
+.comparables-card {
+  width: 100%;
+}
+
+.comparables-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.comparables-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.create-comparable-btn,
+.export-pdf-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.create-comparable-btn {
+  background: #555555;
+  color: white;
+}
+
+.create-comparable-btn:hover {
+  background: #333;
+}
+
+.export-pdf-btn {
+  background: #28a745;
+  color: white;
+}
+
+.export-pdf-btn:hover {
+  background: #218838;
+}
+
+.comparables-average {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.average-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.average-value {
+  font-weight: 700;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.comparables-table-wrapper {
+  overflow-x: auto;
+}
+
+.comparables-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: sans-serif;
+  margin-top: 1rem;
+}
+
+.comparables-table th {
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 600;
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+}
+
+.comparables-table td {
+  padding: 0.75rem;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+}
+
+.comparables-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.comparable-row-clickable:hover {
+  background-color: #e3f2fd !important;
+}
+
+.remove-comparable-btn {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.remove-comparable-btn:hover {
+  background-color: #c82333;
+}
+
+.no-comparables {
+  text-align: center;
+  color: #6c757d;
+  padding: 3rem;
+  font-style: italic;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .property-content {

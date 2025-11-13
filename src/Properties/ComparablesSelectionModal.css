@@ -1,0 +1,132 @@
+.comparables-selection-modal .comparables-modal-content {
+  max-width: 1200px;
+  width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.comparables-search-container {
+  margin-bottom: 1rem;
+}
+
+.comparables-search-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.comparables-table-container {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.comparables-selection-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: sans-serif;
+}
+
+.comparables-selection-table th {
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 600;
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.comparables-selection-table td {
+  padding: 0.75rem;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+}
+
+.comparables-selection-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.comparables-selection-table tbody tr.selected {
+  background-color: #e3f2fd;
+}
+
+.add-comparable-btn {
+  background-color: #ffffff;
+  color: #555555;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.add-comparable-btn:hover {
+  background-color: #555555;
+  color: #ffffff;
+}
+
+.add-comparable-btn.added {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.add-comparable-btn.added:hover {
+  background-color: #218838;
+}
+
+.comparables-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.cancel-button,
+.done-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background-color: #f8f9fa;
+  color: #333;
+  border: 1px solid #dee2e6;
+}
+
+.cancel-button:hover {
+  background-color: #e9ecef;
+}
+
+.done-button {
+  background-color: #555555;
+  color: white;
+}
+
+.done-button:hover:not(:disabled) {
+  background-color: #333;
+}
+
+.done-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.empty-row {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+}
+
