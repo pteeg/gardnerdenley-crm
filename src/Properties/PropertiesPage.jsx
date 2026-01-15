@@ -227,7 +227,12 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
                       </button>
                     </div>
                     <div className="property-tile-name">{property.name}</div>
-                    <div className="property-tile-description">{property.description || "—"}</div>
+                    <div 
+                      className="property-tile-description" 
+                      data-tooltip={property.description || ""}
+                    >
+                      <span className="property-tile-description-text">{property.description || "—"}</span>
+                    </div>
                     <div className="property-tile-price">{property.price ? `£${Number(property.price).toLocaleString()}` : "—"}</div>
                     <div className="property-tile-status">{property.status || "—"}</div>
                     <div className="property-tile-actions" onClick={(e) => { e.stopPropagation(); }}>

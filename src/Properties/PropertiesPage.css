@@ -149,9 +149,47 @@
   font-size: 0.95rem;
   color: #333;
   font-family: sans-serif;
+  padding-right: 1rem;
 }
 
-.property-tile-description,
+.property-tile-description {
+  position: relative;
+  min-width: 0;
+  padding-right: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+  font-family: sans-serif;
+}
+
+.property-tile-description-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+.property-tile-description[data-tooltip]:not([data-tooltip=""]):not([data-tooltip="—"]):hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  background: #333;
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  white-space: normal;
+  max-width: 400px;
+  min-width: 200px;
+  word-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  pointer-events: none;
+  display: block;
+}
+
 .property-tile-price,
 .property-tile-status {
   font-size: 0.9rem;
