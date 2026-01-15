@@ -1,31 +1,106 @@
-/* Global reset to remove default page margins */
-body {
+/* App background - covers entire viewport */
+html, body {
   margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #ffffff;
+  /* Keep vertical scrollbar space reserved so header content doesn't shift */
+  overflow-y: scroll;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Make scrollbar track white so there is no grey gutter on the right edge */
+body::-webkit-scrollbar {
+  width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+  background-color: transparent; /* allow page background (e.g. Overview photo) to reach edge */
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: #c4c4c4;
+  border-radius: 999px;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 /* ---------- HEADER ---------- */
 .header {
-  display: grid;
-  grid-template-columns: 150px 1fr auto; /* reduced logo column width to account for margin */
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   position: relative;
   padding: 0.25rem;
   font-family: sans-serif;
-  min-height: 160px; /* match logo height to center everything */
+  min-height: 135px; /* match logo height to center everything */
+  z-index: 1000; /* Ensure header and its dropdowns appear above page content */
+  overflow: visible;
 }
 
 .logo {
-  width: 160px;
-  height: 160px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: contain;
   justify-self: start; /* sits in left column */
   margin-left: 10px; /* move logo slightly to the right */
 }
 
+.nav-area {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 1001; /* Above header z-index */
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-and-activity-center {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  justify-content: center;
+  position: relative;
+  z-index: 1001;
+}
+
+.nav-area.narrow-screen {
+  justify-content: center;
+  flex: 0;
+  margin: 0;
+}
+
+.activity-button-center {
+  position: absolute;
+  z-index: 1002;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  visibility: visible;
+  opacity: 1;
+}
+
+.activity-button-center.narrow-screen {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 1002;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: auto;
+  height: auto;
+}
+
 .nav-pills {
-  justify-self: center; /* centers over main content column */
-  background-color: #f5f5f5;
+  background-color: rgba(245, 245, 245, 0.85);
+  backdrop-filter: blur(8px);
   border-radius: 999px;
   display: flex;
   overflow: hidden;
@@ -33,6 +108,7 @@ body {
   gap: 0.2rem; /* small spacing between pills */
   align-self: center; /* center vertically with logo */
   position: relative; /* for sliding highlight */
+  align-items: stretch; /* Ensure buttons stretch to container height */
 }
 
 .nav-button {
@@ -48,6 +124,8 @@ body {
   display: flex; /* ensure vertical centering and full height */
   align-items: center;
   height: 100%;
+  white-space: nowrap; /* Prevent text wrapping that could cause height changes */
+  flex-shrink: 0; /* Prevent buttons from shrinking and causing height issues */
 }
 
 .nav-button.active {
@@ -73,6 +151,125 @@ body {
 .nav-pills .nav-button {
   position: relative;
   z-index: 1;
+}
+
+/* Responsive navigation dropdown */
+.nav-pills-dropdown {
+  position: relative;
+  overflow: visible; /* Allow dropdown to show outside */
+}
+
+.nav-pills-dropdown .nav-button.active {
+  background-color: #555; /* Grey background for active pill in dropdown mode */
+  color: white;
+}
+
+.nav-caret {
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  padding: 6px;
+  min-width: 180px;
+  z-index: 10000;
+}
+
+.nav-dropdown-item {
+  width: 100%;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.15s ease;
+}
+
+.nav-dropdown-item:hover {
+  background: #f5f5f5;
+}
+
+.nav-dropdown-item.active {
+  background: #555;
+  color: white;
+}
+
+.nav-dropdown-item.active:hover {
+  background: #444;
+}
+
+.actions-area {
+  position: relative;
+}
+
+.actions-button {
+  padding: 1rem 1.8rem;
+  border-radius: 999px;
+  border: 1px solid #555;
+  background: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #ffffff;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.actions-button:hover {
+  background-color: #444;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.actions-caret {
+  font-size: 0.8rem;
+}
+
+.actions-menu {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  padding: 6px;
+  min-width: 160px;
+  z-index: 10;
+}
+
+.actions-menu button {
+  width: 100%;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.actions-menu button:hover {
+  background: #f5f5f5;
 }
 
 .profile-pic {
@@ -113,119 +310,109 @@ body {
   font-size: 0.9em;
 }
 
-/* Profile dropdown */
+/* Hamburger menu */
 .profile-area {
   position: relative;
   align-self: center;
-  margin-right: 40px;
-  width: 44px; /* Fix layout width so expanding pill doesn't move nav */
-  height: 44px; /* Ensure dropdown positions below, not over */
+  margin-right: 0.5rem;
+  margin-left: 0.75rem;
   display: inline-block;
+  flex-shrink: 0;
+  z-index: 1003;
 }
 
-.profile-button {
+.hamburger-button {
+  width: 44px;
   height: 44px;
   border-radius: 999px;
-  border: 2px solid #555;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start; /* label grows from the left */
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, width 200ms ease;
-  width: 44px; /* collapsed */
-  overflow: hidden;
-  gap: 0;
-  position: absolute;
-  right: 0; /* expand leftwards inside fixed-width area */
-  top: 0; /* ensure perfectly centered within the 44px slot */
-  z-index: 2;
-  box-sizing: border-box; /* include border in width/height for perfect centering */
-  padding-left: 0; /* no left padding when collapsed */
-}
-
-.profile-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.profile-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.profile-button .profile-label {
-  opacity: 0;
-  white-space: nowrap;
-  color: #333;
-  font-size: 0.9rem;
-  padding-left: 0;
-  margin: 0;
-  max-width: 0;
-  overflow: hidden;
-  transition: opacity 150ms ease, max-width 200ms ease, padding-left 150ms ease;
-}
-
-.profile-button .profile-icon {
-  position: absolute;
-  right: 0; /* nudge further right */
-  top: 1px; /* slight upward adjustment */
-  width: 40px;
-  height: 40px;
+  border: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  z-index: 10000;
 }
 
-.profile-button.open {
-  width: 200px; /* expanded pill */
-  padding-left: 12px;
-  padding-right: 44px; /* reserve space so text never pushes icon */
-}
-
-.profile-button.open .profile-label {
-  opacity: 1;
-  max-width: 160px;
-  padding-left: 8px;
-}
-
-/* Ensure FA icon has no extra baseline space */
-.profile-button svg {
-  display: block;
-}
-
-.profile-menu {
-  position: absolute;
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   right: 0;
-  top: 52px; /* below the 44px button with some gap regardless of expanded width */
-  background: white;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-  padding: 6px;
-  min-width: 140px;
-  z-index: 10;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 9998;
+  animation: fadeIn 0.2s ease;
 }
 
-.profile-menu button {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hamburger-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 100vh;
+  background: #555;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  padding: 2rem;
+  animation: slideInRight 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 8rem;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.hamburger-menu .menu-item {
   width: 100%;
-  padding: 8px 10px;
-  background: white;
+  padding: 12px 16px;
+  padding-right: 2rem;
+  background: transparent;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   text-align: left;
   display: flex;
   align-items: center;
+  font-size: 1rem;
+  color: white;
+  transition: background-color 0.15s ease;
 }
 
-.profile-menu button:hover {
-  background: #f5f5f5;
+.hamburger-menu .menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .profile-email {
   color: #666;
   font-size: 0.8rem;
+}
+
+/* Floating table container */
+.floating-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  overflow: hidden;
 }

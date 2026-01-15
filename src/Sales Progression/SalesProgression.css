@@ -13,6 +13,11 @@
   padding: 15px 10px 20px 20px;
   max-width: calc(100vw - 240px); /* Full viewport width minus sidebar width */
   overflow-x: hidden; /* Prevent horizontal overflow at content level */
+  transition: max-width 0.3s ease;
+}
+
+.sales-progression-body .gd-sidebar.collapsed ~ .sales-progression-content {
+  max-width: calc(100vw - 60px); /* Adjusted for collapsed sidebar (60px width) */
 }
 
 .sp-subtitle {
@@ -137,6 +142,68 @@
 }
 
 /* £ symbol INSIDE the box */
+.sales-progression-header {
+  box-sizing: border-box;
+}
+
+.sales-progression-header > *,
+.activity-tile-row > * {
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+}
+
+.sales-progression-header > div,
+.sales-progression-header-column {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.sales-progression-tile-column {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.sales-progression-tile-column:not(:has(button)) {
+  padding: 0;
+}
+
+.activity-tile-row {
+  box-sizing: border-box;
+}
+
+.activity-tile-row > div {
+  box-sizing: border-box;
+}
+
+.sales-progression-tile-column {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.sales-progression-tile-column > * {
+  margin: 0;
+}
+
+.sales-progression-tile-column .status-toggle {
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .currency-symbol {
   position: absolute;
   left: 10px;
@@ -182,4 +249,18 @@
 
 .view-completed-btn:hover {
   background-color: #0056b3;
+}
+
+/* Activity tile styling for deal rows */
+.sales-progression-unified-grid .activity-tile {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd !important;
+  transition: box-shadow 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.sales-progression-unified-grid .activity-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }

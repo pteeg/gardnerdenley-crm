@@ -1,14 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import "./WongaReport.css";
 import Sidebar from "../Sidebar";
 import WongaChart from "./WongaChart";
 
+// Helper function to find a client by matching various name formats
+function findClientByName(clientName, clients = []) {
+  if (!clientName || !clients.length) return null;
+  
+  return clients.find(c => {
+    // Direct match with client.name
+    if (c.name === clientName) return true;
+    
+    // Check formatted names
+    if (c.spouse1FirstName && c.spouse2FirstName) {
+      const bothFirstNames = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+      if (clientName === bothFirstNames || 
+          (c.spouse1Surname && clientName === `${bothFirstNames} ${c.spouse1Surname}`)) {
+        return true;
+      }
+    }
+    if (c.spouse1FirstName) {
+      const singleName = c.spouse1Surname 
+        ? `${c.spouse1FirstName} ${c.spouse1Surname}` 
+        : c.spouse1FirstName;
+      if (clientName === singleName) return true;
+    }
+    return false;
+  });
+}
+
 // Helper function to format client names
 function formatClientName(clientName, clients = []) {
-  // Find the client data to get spouse information
-  const client = clients.find(c => c.name === clientName || 
-    (c.spouse1FirstName && c.spouse1Surname && 
-     `${c.spouse1FirstName} and ${c.spouse2FirstName || c.spouse1FirstName} ${c.spouse1Surname}` === clientName));
+  const client = findClientByName(clientName, clients);
   
   if (client && client.spouse1FirstName) {
     if (client.spouse2FirstName) {
@@ -71,13 +94,16 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
   });
   // Table scope: 'fy' uses FY filter, 'full' shows all completed deals
   const [tableScope, setTableScope] = React.useState('fy');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const tableRows = tableScope === 'full' ? sortedDeals : filteredForFY;
 
   return (
     <div className="wonga-report">
       <div className="wonga-body">
         <Sidebar
-          title="Wonga Report"
+          title="Revenue"
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           items={[
             { key: 'fy', label: 'By Financial Year', active: tableScope === 'fy', onClick: () => setTableScope('fy') },
             { key: 'full', label: 'Full Table', active: tableScope === 'full', onClick: () => setTableScope('full') },
@@ -144,7 +170,8 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
           )}
           
           {/* Table container - 40% of remaining space */}
-          <div className="table-container">
+          <div className="floating-table-container">
+            <div className="table-container">
             <div className="table-scroll">
               <table className="wonga-table">
                 <thead>
@@ -164,9 +191,7 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
                   {tableRows.length > 0 ? (
                     tableRows.map((row, index) => {
                       // Find the client data to get additional information
-                      const client = clients.find(c => c.name === row.client || 
-                        (c.spouse1FirstName && c.spouse1Surname && 
-                         `${c.spouse1FirstName} and ${c.spouse2FirstName || c.spouse1FirstName} ${c.spouse1Surname}` === row.client));
+                      const client = findClientByName(row.client, clients);
                       
                       // Use the Invoice Amount from sales progression as the Net GD Fee
                       const netFee = Number(row.invoiceAmount) || 0;
@@ -235,6 +260,7 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         </div>
       </div>

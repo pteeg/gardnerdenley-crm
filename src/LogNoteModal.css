@@ -1,0 +1,214 @@
+.log-note-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.log-note-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.log-note-modal .modal-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.log-note-modal .close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.log-note-modal .close-button:hover {
+  color: #333;
+}
+
+.log-note-modal .modal-body {
+  padding: 0.5rem 1.5rem;
+}
+
+.log-note-modal .form-group {
+  margin-bottom: 0.25rem;
+}
+
+.log-note-modal .form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.log-note-modal .type-button-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.log-note-modal .type-button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.log-note-modal .type-button:hover {
+  background: #f9fafb;
+  border-color: #bbb;
+}
+
+.log-note-modal .type-button.selected {
+  background: #555;
+  color: white;
+  border-color: #555;
+}
+
+.log-note-modal .search-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.log-note-modal .selected-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f3f4f6;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.log-note-modal .clear-selection-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.log-note-modal .clear-selection-btn:hover {
+  background: #e5e7eb;
+}
+
+.log-note-modal .selection-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  background: white;
+}
+
+.log-note-modal .selection-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s;
+}
+
+.log-note-modal .selection-item:hover {
+  background: #f9fafb;
+}
+
+.log-note-modal .selection-item:last-child {
+  border-bottom: none;
+}
+
+.log-note-modal .datetime-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.log-note-modal .date-input,
+.log-note-modal .time-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.log-note-modal .note-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.log-note-modal .modal-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 0.5rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.log-note-modal .save-btn {
+  padding: 0.75rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.log-note-modal .save-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.log-note-modal .save-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.log-note-modal .cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.log-note-modal .cancel-btn:hover {
+  background: #f9fafb;
+}
+

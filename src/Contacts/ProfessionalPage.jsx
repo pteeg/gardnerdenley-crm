@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./ProfessionalPage.css";
+import EntityActivityLog from "../EntityActivityLog";
 
-function ProfessionalPage({ professional, onBack, properties = [], salesProgressions = [], clients = [] }) {
+function ProfessionalPage({ professional, onBack, properties = [], salesProgressions = [], clients = [], onArchiveProfessional, onRestoreProfessional }) {
   const [showEdit, setShowEdit] = useState(false);
   const [displayProfessional, setDisplayProfessional] = useState(professional);
   const [formData, setFormData] = useState({
@@ -71,6 +72,31 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
         <div className="header-actions">
           <div className="action-buttons">
             <button className="edit-button" type="button" onClick={() => setShowEdit(true)}>Edit</button>
+            {professional.archived ? (
+              <button 
+                className="restore-button" 
+                type="button" 
+                onClick={async () => {
+                  if (onRestoreProfessional) {
+                    await onRestoreProfessional(professional);
+                  }
+                }}
+              >
+                Unarchive
+              </button>
+            ) : (
+              <button 
+                className="archive-button" 
+                type="button" 
+                onClick={async () => {
+                  if (onArchiveProfessional) {
+                    await onArchiveProfessional(professional);
+                  }
+                }}
+              >
+                Archive
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -143,6 +169,15 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
             )}
           </div>
         </div>
+      </div>
+
+      {/* Activity log for this professional (matches by name using client-type activities) */}
+      <div style={{ padding: "0 1.5rem 1.5rem" }}>
+        <EntityActivityLog
+          entityType="client"
+          entityName={displayProfessional.name}
+          title="Activity for this professional"
+        />
       </div>
 
       {/* Edit Modal */}

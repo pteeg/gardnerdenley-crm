@@ -35,37 +35,99 @@
   width: 240px;
 }
 
-.professionals-table {
+/* Shared grid definition for alignment */
+.professionals-tiles-container {
+  --grid-cols: 50px 1.5fr 1.5fr 1.2fr 1.5fr 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100%;
-  border-collapse: collapse;
-  font-family: sans-serif;
 }
 
-.professionals-table th {
-  text-align: left;
+/* Table header row */
+.professionals-table-header-row {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
   padding: 0.75rem;
+  background-color: transparent;
+  border-radius: 8px 8px 0 0;
   font-weight: 600;
   font-family: sans-serif;
-  background-color: #f9f9f9; /* like clients table */
   color: #333;
-  border-bottom: 1px solid #ddd;
+  gap: 0;
 }
 
-.professionals-table td {
+.professional-tile-column-header {
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+/* Individual professional tile - full width horizontal row */
+.professional-tile {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  align-items: center;
   padding: 0.75rem;
-  font-weight: 400;
-  font-family: sans-serif;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  transition: box-shadow 0.2s ease;
+  cursor: pointer;
+  gap: 0;
+}
+
+.professional-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.professional-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.professional-tile-favourite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.professional-tile-name {
+  font-weight: 500;
+  font-size: 0.95rem;
   color: #333;
-  border-bottom: 1px solid #ddd;
+  font-family: sans-serif;
+}
+
+.professional-tile-company,
+.professional-tile-mobile,
+.professional-tile-email {
+  font-size: 0.9rem;
+  color: #333;
+  font-family: sans-serif;
+}
+
+.professional-tile-type {
+  display: flex;
+  align-items: center;
+}
+
+.professional-tile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .empty-row {
   text-align: center;
   color: #999;
-  padding: 1rem;
+  padding: 2rem;
+  font-style: italic;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
-.professionals-table .archive-btn {
+.archive-btn {
   background-color: #ffffff !important;
   color: #555555 !important;
   padding: 0.3rem 0.75rem;
@@ -73,10 +135,10 @@
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
-  font-size: 0.95rem; /* match Properties archive button */
+  font-size: 0.875rem;
 }
 
-.professionals-table .archive-btn:hover {
+.archive-btn:hover {
   background-color: #555555 !important;
   color: #ffffff !important;
   border-color: #555555 !important;
@@ -89,6 +151,11 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.restore-btn:hover {
+  background-color: #229954;
 }
 
 /* Header buttons consistent with clients table */
@@ -114,19 +181,13 @@
   font-weight: 500;
 }
 
-/* Align archive button to the right edge of the last column */
-.professionals-table td:last-child {
-  text-align: right;
-  padding-left: 0;
-  padding-right: 1.5rem;
-}
-
 .type-pill {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 999px;
   font-weight: 500;
   font-size: 0.82rem;
+  font-family: sans-serif;
   text-transform: none;
   border: 1px solid #b3d0ff;
   background: #eef5ff;
@@ -137,6 +198,17 @@
   cursor: pointer;
 }
 
-.clickable-row:hover {
-  background-color: #f0f0f0;
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .professionals-tiles-container {
+    --grid-cols: 40px 1fr 1fr;
+  }
+  
+  .professionals-table-header-row .professional-tile-column-header:nth-child(n+4),
+  .professional-tile .professional-tile-company,
+  .professional-tile .professional-tile-mobile,
+  .professional-tile .professional-tile-email,
+  .professional-tile .professional-tile-type {
+    display: none;
+  }
 }

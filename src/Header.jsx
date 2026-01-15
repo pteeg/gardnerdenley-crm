@@ -9,7 +9,7 @@ const Header = () => {
         <div className="tab active">Contacts</div>
         <div className="tab">Properties</div>
         <div className="tab">Sales Progression</div>
-        <div className="tab">Wonga Report</div>
+        <div className="tab">Revenue</div>
       </nav>
     </header>
   );

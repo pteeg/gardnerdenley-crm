@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import "./ClientsTable.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
-import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
+import { faHeart as faHeartSolid, faPhone, faAt } from '@fortawesome/free-solid-svg-icons';
 
 // Helper function to format client names
 function formatClientName(client) {
@@ -23,9 +23,7 @@ function formatClientName(client) {
 function ClientsTable({ 
   clients, 
   onNewClientClick, 
-  onArchiveClient, 
   onRestore, 
-  onToggleView, 
   showArchived, 
   onRowClick,
   favouritesOnly: favouritesOnlyProp
@@ -110,28 +108,30 @@ function ClientsTable({
               {showFavouritesOnly ? 'Show All' : 'Favourites'}
             </button>
           )}
-          <button onClick={onToggleView} className="toggle-btn">
-            {showArchived ? "Show Active" : "Show Archived"}
-          </button>
         </div>
       </div>
 
-      <table className="clients-table">
-        <thead>
-          <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Client Source</th>
-            <th>Max Budget</th>
-            <th>Phone</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredClients.map((client, index) => (
-            <tr key={index} onClick={() => onRowClick(client)} className="clickable-row">
-              <td onClick={(e) => { e.stopPropagation(); }}>
+      <div className="clients-tiles-container">
+        <div className="clients-table-header-row">
+          <div className="client-tile-column-header"></div>
+          <div className="client-tile-column-header">Name</div>
+          <div className="client-tile-column-header">Status</div>
+          <div className="client-tile-column-header">Brief</div>
+          <div className="client-tile-column-header">Max Budget</div>
+          <div className="client-tile-column-header"></div>
+        </div>
+        {filteredClients.length === 0 ? (
+          <div className="empty-row">
+            No clients found
+          </div>
+        ) : (
+          filteredClients.map((client, index) => (
+            <div 
+              key={index} 
+              onClick={() => onRowClick(client)} 
+              className="client-tile clickable-row"
+            >
+              <div className="client-tile-favourite" onClick={(e) => { e.stopPropagation(); }}>
                 <button
                   aria-label={client.favourite ? 'Unfavourite' : 'Favourite'}
                   className="icon-button"
@@ -144,43 +144,96 @@ function ClientsTable({
                 >
                   <FontAwesomeIcon icon={client.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
                 </button>
-              </td>
-              <td>{formatClientName(client)}</td>
-              <td>
+              </div>
+              <div className="client-tile-name">{formatClientName(client)}</div>
+              <div className="client-tile-status">
                 <span className={`status-badge ${(client.status || "unknown").toLowerCase().replace(/\s/g, '-')}`}>
                   {client.status || "Unknown"}
                 </span>
-              </td>
-              <td>{client.clientSource || "—"}</td>
-              <td>{client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not Specified"}</td>
-              <td>{client.phoneNumber}</td>
-              <td>
-                {showArchived ? (
+              </div>
+              <div 
+                className="client-tile-source" 
+                data-tooltip={client.brief || ""}
+              >
+                <span className="client-tile-source-text">{client.brief || "—"}</span>
+              </div>
+              <div className="client-tile-budget">
+                {client.maxBudget
+                  ? `£${Number(client.maxBudget).toLocaleString()}`
+                  : "(Not Specified)"}
+              </div>
+              <div className="client-tile-phone" onClick={(e) => { e.stopPropagation(); }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (client.phoneNumber) {
+                      window.location.href = `tel:${client.phoneNumber}`;
+                    }
+                  }}
+                  className="client-contact-icon"
+                  data-tooltip={client.phoneNumber || ""}
+                  style={{
+                    background: "#f3f4f6",
+                    border: "none",
+                    cursor: client.phoneNumber ? "pointer" : "default",
+                    padding: 0,
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#555555",
+                    marginRight: "6px"
+                  }}
+                >
+                  <FontAwesomeIcon icon={faPhone} style={{ fontSize: "1rem" }} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (client.email) {
+                      window.location.href = `mailto:${client.email}`;
+                    }
+                  }}
+                  className="client-contact-icon"
+                  data-tooltip={client.email || ""}
+                  style={{
+                    background: "#f3f4f6",
+                    border: "none",
+                    cursor: client.email ? "pointer" : "default",
+                    padding: 0,
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#555555",
+                    marginRight: showArchived ? "8px" : "0"
+                  }}
+                >
+                  <FontAwesomeIcon icon={faAt} style={{ fontSize: "1rem" }} />
+                </button>
+                {showArchived && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onRestore(client);
                     }}
                     className="restore-btn"
+                    style={{ marginLeft: "0.5rem" }}
                   >
-                    Restore
-                  </button>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onArchiveClient(client);
-                    }}
-                    className="archive-btn"
-                  >
-                    Archive
+                    Unarchive
                   </button>
                 )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

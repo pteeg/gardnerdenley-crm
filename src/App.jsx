@@ -3,30 +3,41 @@ import { subscribeToClients } from "./lib/clientsApi";
 import "./App.css";
 import gdLogo from "./assets/gd-logo.jpeg";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faX, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import Contacts from "./Contacts/Contacts";
 import PropertiesPage from "./Properties/PropertiesPage";
 import SalesProgression from "./Sales Progression/SalesProgression";
 import WongaReport from "./Wonga Report/WongaReport";
+import Overview from "./Overview/Overview";
+import OldHome from "./OldHome/OldHome";
 import Login from "./Login";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { subscribeToProperties } from "./lib/propertiesApi";
 import { subscribeToProfessionals } from "./lib/professionalsApi";
 import { subscribeToSalesProgressions } from "./lib/salesProgressionsApi";
 import { cleanupOldSalesProgressions } from "./lib/cleanupApi";
+import LogOfferModal from "./LogOfferModal";
+import LogNoteModal from "./LogNoteModal";
+import ActivityButton from "./ActivityButton";
+import { logActivity } from "./lib/activityLogApi";
 
 function AppContent({ logout }) {
-  const [activeTab, setActiveTab] = useState("Contacts");
+  const [activeTab, setActiveTab] = useState("Overview");
   const [pendingOpenClientName, setPendingOpenClientName] = useState(null);
   const pillsRef = useRef(null);
   const btnRefs = useRef({});
   const [highlightStyle, setHighlightStyle] = useState({ transform: "translateX(0)", width: 0 });
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
+  const [showNavDropdown, setShowNavDropdown] = useState(false);
+  const navDropdownRef = useRef(null);
 
   // Reposition highlight on tab change or resize
   useLayoutEffect(() => {
     const reposition = () => {
       const container = pillsRef.current;
-      const btn = btnRefs.current[activeTab];
+      // Map "Overview" to the "Home" button ref
+      const tabKey = activeTab === "Overview" ? "Overview" : activeTab;
+      const btn = btnRefs.current[tabKey];
       if (!container || !btn) return;
       const cRect = container.getBoundingClientRect();
       const bRect = btn.getBoundingClientRect();
@@ -34,15 +45,42 @@ function AppContent({ logout }) {
       const width = bRect.width;
       setHighlightStyle({ transform: `translateX(${left}px)`, width });
     };
+
     reposition();
     window.addEventListener("resize", reposition);
     return () => window.removeEventListener("resize", reposition);
   }, [activeTab]);
-  const tabs = ["Contacts", "Properties", "Sales Progression", "Wonga Report"];
+  const tabs = ["Home", "Contacts", "Properties", "Sales Progression", "Revenue"];
+
+  // Check screen width for responsive navigation
+  useEffect(() => {
+    const checkScreenWidth = () => {
+      setIsNarrowScreen(window.innerWidth < 1100);
+    };
+    
+    checkScreenWidth();
+    window.addEventListener("resize", checkScreenWidth);
+    return () => window.removeEventListener("resize", checkScreenWidth);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navDropdownRef.current && !navDropdownRef.current.contains(event.target)) {
+        setShowNavDropdown(false);
+      }
+    };
+
+    if (showNavDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showNavDropdown]);
 
   // ✅ Properties state (Firestore-backed)
   const [properties, setProperties] = useState([]);
   const [showArchivedProperties, setShowArchivedProperties] = useState(false);
+  const [pendingOpenPropertyName, setPendingOpenPropertyName] = useState(null);
 
   useEffect(() => {
     const unsubscribe = subscribeToProperties({ includeArchived: true }, setProperties);
@@ -59,6 +97,28 @@ function AppContent({ logout }) {
     };
     window.addEventListener('openClientByName', handler);
     return () => window.removeEventListener('openClientByName', handler);
+  }, []);
+
+  // Listen for requests to open a property by name (e.g. from master activity log)
+  useEffect(() => {
+    const handler = (e) => {
+      const name = e?.detail?.name;
+      if (!name) return;
+      setActiveTab("Properties");
+      setPendingOpenPropertyName(name);
+    };
+    window.addEventListener('openPropertyByName', handler);
+    return () => window.removeEventListener('openPropertyByName', handler);
+  }, []);
+
+  // Listen for requests to open Sales Progression tab
+  useEffect(() => {
+    const handler = (e) => {
+      setActiveTab("Sales Progression");
+      // Could potentially scroll to or highlight specific client/property combination in the future
+    };
+    window.addEventListener('openSalesProgression', handler);
+    return () => window.removeEventListener('openSalesProgression', handler);
   }, []);
 
   const handleArchiveProperty = async (propertyToArchive) => {
@@ -108,7 +168,10 @@ function AppContent({ logout }) {
     const client = clients.find(c => c.name === clientName);
     if (client?.id) {
       const { updateClientById } = await import("./lib/clientsApi");
-      await updateClientById(client.id, { status: newStatus });
+      // When status is "Archived", also set archived to true
+      // When status is anything else (e.g., "Under Offer"), set archived to false (unarchives the client)
+      const archived = newStatus === "Archived";
+      await updateClientById(client.id, { status: newStatus, archived });
     }
   };
 
@@ -241,89 +304,269 @@ function AppContent({ logout }) {
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef(null);
-  const profileLabelRef = useRef(null);
-  const [profileButtonWidth, setProfileButtonWidth] = useState(44);
+  const activityButtonCenterRef = useRef(null);
+
+  // Log Offer Modal state
+  const [showLogOfferModal, setShowLogOfferModal] = useState(false);
+  const [currentSelectedClient, setCurrentSelectedClient] = useState(null);
+  
+  // Log Note Modal state
+  const [showLogNoteModal, setShowLogNoteModal] = useState(false);
+  const [showPhoneCallModal, setShowPhoneCallModal] = useState(false);
+  const [currentSelectedProperty, setCurrentSelectedProperty] = useState(null);
+
+  // Clear selected client/property when navigating away from Contacts/Properties pages
+  useEffect(() => {
+    if (activeTab !== "Contacts" && activeTab !== "Properties") {
+      setCurrentSelectedClient(null);
+      setCurrentSelectedProperty(null);
+    }
+  }, [activeTab]);
+
+  // Global handlers for + Activity buttons inside entity pages
+  useEffect(() => {
+    const handleLogOfferForClient = (event) => {
+      const name = event.detail?.clientName;
+      if (!name) return;
+      const client = clients.find((c) => c.name === name);
+      if (!client) return;
+      setCurrentSelectedClient(client);
+      setShowLogOfferModal(true);
+    };
+
+    const handleLogNoteForClient = (event) => {
+      const name = event.detail?.clientName;
+      if (!name) return;
+      const client = clients.find((c) => c.name === name);
+      if (!client) return;
+      setCurrentSelectedClient(client);
+      setCurrentSelectedProperty(null);
+      // Check if this is for phone call or regular note
+      const isPhoneCall = event.detail?.isPhoneCall;
+      if (isPhoneCall) {
+        setShowPhoneCallModal(true);
+      } else {
+        setShowLogNoteModal(true);
+      }
+    };
+
+    window.addEventListener("logOfferForClient", handleLogOfferForClient);
+    window.addEventListener("logNoteForClient", handleLogNoteForClient);
+
+    return () => {
+      window.removeEventListener("logOfferForClient", handleLogOfferForClient);
+      window.removeEventListener("logNoteForClient", handleLogNoteForClient);
+    };
+  }, [clients]);
 
   useEffect(() => {
     if (!showProfileMenu) return;
-    const handleClickOutside = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setShowProfileMenu(false);
-      }
-    };
     const handleEscape = (e) => {
       if (e.key === 'Escape') setShowProfileMenu(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
   }, [showProfileMenu]);
 
-  // Dynamically size the expanding profile pill to fit label without moving the icon
+  // Position ActivityButton between nav pills and hamburger button (wide screen only)
   useLayoutEffect(() => {
-    const computeWidth = () => {
-      const labelEl = profileLabelRef.current;
-      if (!labelEl) return;
-      const labelWidth = labelEl.scrollWidth; // natural width of text
-      const padding = 30; // slightly reduced padding so pill expands a bit less
-      setProfileButtonWidth(44 + labelWidth + padding);
-    };
-    if (showProfileMenu) {
-      computeWidth();
-      window.addEventListener('resize', computeWidth);
-      return () => window.removeEventListener('resize', computeWidth);
-    } else {
-      setProfileButtonWidth(44);
+    if (isNarrowScreen) {
+      // In narrow screen mode, flex container handles centering
+      if (activityButtonCenterRef.current) {
+        activityButtonCenterRef.current.style.left = '';
+        activityButtonCenterRef.current.style.transform = '';
+      }
+      return;
     }
-  }, [showProfileMenu]);
+    
+    const updateActivityButtonPosition = () => {
+      if (!pillsRef.current || !profileRef.current || !activityButtonCenterRef.current) return;
+      
+      const navPillsRect = pillsRef.current.getBoundingClientRect();
+      const profileRect = profileRef.current.getBoundingClientRect();
+      const headerRect = pillsRef.current.closest('.header')?.getBoundingClientRect();
+      
+      if (!headerRect) return;
+      
+      // Calculate midpoint between right edge of nav pills and left edge of hamburger button
+      const navPillsRight = navPillsRect.right - headerRect.left;
+      const hamburgerLeft = profileRect.left - headerRect.left;
+      const midpoint = (navPillsRight + hamburgerLeft) / 2;
+      
+      // Position the button at the midpoint
+      if (midpoint > 0 && midpoint < headerRect.width) {
+        activityButtonCenterRef.current.style.left = `${midpoint}px`;
+        activityButtonCenterRef.current.style.transform = 'translateX(-50%) translateY(-50%)';
+        activityButtonCenterRef.current.style.visibility = 'visible';
+      }
+    };
+    
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(updateActivityButtonPosition, 100);
+    updateActivityButtonPosition();
+    window.addEventListener('resize', updateActivityButtonPosition);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateActivityButtonPosition);
+    };
+  }, [activeTab, isNarrowScreen]);
 
   return (
     <div>
       {/* ✅ Header */}
       <div className="header">
-        <img src={gdLogo} alt="Logo" className="logo" />
-        <div className="nav-pills" ref={pillsRef}>
-          <div className="nav-highlight" style={highlightStyle} />
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              className={`nav-button ${activeTab === tab ? "active" : ""}`}
-              onClick={() => setActiveTab(tab)}
-              ref={(el) => (btnRefs.current[tab] = el)}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <img 
+          src={gdLogo} 
+          alt="Logo" 
+          className="logo clickable-logo" 
+          onClick={() => setActiveTab("Overview")}
+          style={{ cursor: "pointer" }}
+        />
+        {isNarrowScreen ? (
+          <div className="nav-and-activity-center">
+            <div className="nav-area narrow-screen">
+              <div className="nav-pills nav-pills-dropdown" ref={navDropdownRef}>
+                <button
+                  className="nav-button active"
+                  onClick={() => setShowNavDropdown(!showNavDropdown)}
+                  style={{ position: "relative", zIndex: 1001 }}
+                >
+                  {activeTab === "Overview" ? "Home" : activeTab}
+                  <span className="nav-caret" style={{ marginLeft: "0.5rem" }}>▾</span>
+                </button>
+                {showNavDropdown && (
+                  <div className="nav-dropdown" style={{ zIndex: 10000 }}>
+                    {tabs.map((tab) => {
+                      const tabKey = tab === "Home" ? "Overview" : tab;
+                      const isActive = activeTab === tabKey;
+                      return (
+                        <button
+                          key={tab}
+                          className={`nav-dropdown-item ${isActive ? "active" : ""}`}
+                          onClick={() => {
+                            setActiveTab(tabKey);
+                            setShowNavDropdown(false);
+                          }}
+                        >
+                          {tab}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="activity-button-center narrow-screen" ref={activityButtonCenterRef}>
+              <ActivityButton
+                onNoteClick={() => {
+                  setCurrentSelectedClient(null);
+                  setCurrentSelectedProperty(null);
+                  setShowLogNoteModal(true);
+                }}
+                onPhoneCallNoteClick={() => {
+                  setCurrentSelectedClient(null);
+                  setCurrentSelectedProperty(null);
+                  setShowPhoneCallModal(true);
+                }}
+                onLogOfferClick={() => {
+                  setCurrentSelectedClient(null);
+                  setShowLogOfferModal(true);
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="nav-area">
+              <div className="nav-pills" ref={pillsRef}>
+                <div className="nav-highlight" style={highlightStyle} />
+                {tabs.map((tab) => {
+                  // Map "Home" display name to "Overview" in the code
+                  const tabKey = tab === "Home" ? "Overview" : tab;
+                  return (
+                    <button
+                      key={tab}
+                      className={`nav-button ${activeTab === tabKey ? "active" : ""}`}
+                      onClick={() => setActiveTab(tabKey)}
+                      ref={(el) => (btnRefs.current[tabKey] = el)}
+                    >
+                      {tab}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="activity-button-center" ref={activityButtonCenterRef}>
+              <ActivityButton
+                onNoteClick={() => {
+                  setCurrentSelectedClient(null);
+                  setCurrentSelectedProperty(null);
+                  setShowLogNoteModal(true);
+                }}
+                onPhoneCallNoteClick={() => {
+                  setCurrentSelectedClient(null);
+                  setCurrentSelectedProperty(null);
+                  setShowPhoneCallModal(true);
+                }}
+                onLogOfferClick={() => {
+                  setCurrentSelectedClient(null);
+                  setShowLogOfferModal(true);
+                }}
+              />
+            </div>
+          </>
+        )}
         <div className="profile-area" ref={profileRef}>
           <button
             type="button"
-            className={`profile-button ${showProfileMenu ? 'open' : ''}`}
+            className="hamburger-button"
             onClick={() => setShowProfileMenu((v) => !v)}
-            aria-label="Profile menu"
-            style={{ width: `${profileButtonWidth}px` }}
+            aria-label="Menu"
           >
-            <span className="profile-label" ref={profileLabelRef}>Master Account</span>
-            <span className="profile-icon">
-              <FontAwesomeIcon icon={faUser} style={{ color: '#555555', width: '20px', height: '20px' }} />
-            </span>
+            <FontAwesomeIcon 
+              icon={showProfileMenu ? faX : faBars} 
+              style={{ color: showProfileMenu ? 'white' : '#555555', width: '20px', height: '20px' }} 
+            />
           </button>
           {showProfileMenu && (
-            <div className="profile-menu">
-              <button type="button" onClick={logout}>
-                <span>Sign Out</span>
-                <FontAwesomeIcon icon={faRightFromBracket} style={{ color: '#555555', marginLeft: 'auto' }} />
-              </button>
-            </div>
+            <>
+              <div className="menu-overlay" onClick={() => setShowProfileMenu(false)} />
+              <div className="hamburger-menu">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setActiveTab("Old Home");
+                    setShowProfileMenu(false);
+                  }} 
+                  className="menu-item"
+                >
+                  <span>Old Home</span>
+                </button>
+                <button type="button" onClick={logout} className="menu-item">
+                  <span>Sign Out</span>
+                  <FontAwesomeIcon icon={faRightFromBracket} style={{ color: 'white', marginLeft: 'auto' }} />
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* ✅ Page Content */}
-      <div style={{ padding: "0 2rem 2rem 0", marginTop: "-16px" }}>
+      <div style={{ padding: "0", marginTop: "-16px", width: "100%", overflowX: "hidden", marginRight: "0", paddingRight: "0" }}>
+        {activeTab === "Overview" && (
+          <Overview
+            clients={clients}
+            properties={properties}
+            salesProgressions={salesProgressions}
+            updateClientStatus={updateClientStatus}
+            createNewSalesProgression={createNewSalesProgression}
+            removeSalesProgressionRow={removeSalesProgressionRow}
+          />
+        )}
+
         {activeTab === "Contacts" && (
           <Contacts
             clients={clients}
@@ -369,6 +612,7 @@ function AppContent({ logout }) {
             openClientName={pendingOpenClientName}
             onConsumeOpenClient={() => setPendingOpenClientName(null)}
             createNewSalesProgression={createNewSalesProgression}
+            onSelectedClientChange={setCurrentSelectedClient}
           />
         )}
 
@@ -382,6 +626,13 @@ function AppContent({ logout }) {
             onToggleView={toggleArchivedPropertiesView}
             showArchived={showArchivedProperties}
             professionals={professionals}
+            openPropertyName={pendingOpenPropertyName}
+            onConsumeOpenProperty={() => setPendingOpenPropertyName(null)}
+            clients={clients}
+            allProperties={properties}
+            updateClientStatus={updateClientStatus}
+            createNewSalesProgression={createNewSalesProgression}
+            removeSalesProgressionRow={removeSalesProgressionRow}
           />
         )}
 
@@ -408,10 +659,183 @@ function AppContent({ logout }) {
         />
         )}
 
-        {activeTab === "Wonga Report" && (
+        {activeTab === "Revenue" && (
           <WongaReport data={salesProgressions} properties={properties} clients={clients} />
         )}
+
+        {activeTab === "Old Home" && (
+          <OldHome />
+        )}
       </div>
+
+      {/* Log Offer Modal */}
+      <LogOfferModal
+        isOpen={showLogOfferModal}
+        onClose={() => setShowLogOfferModal(false)}
+        clients={clients}
+        properties={properties}
+        preSelectedClient={currentSelectedClient}
+        onSave={async ({ client, property, amount, timestamp }) => {
+          // Update property offer
+          const { updatePropertyById } = await import("./lib/propertiesApi");
+          const propertyToUpdate = properties.find(p => p.id === property.id);
+          if (propertyToUpdate?.id) {
+            const offers = Array.isArray(propertyToUpdate.offers) ? [...propertyToUpdate.offers] : [];
+            offers.push({
+              date: timestamp || new Date().toISOString(),
+              amount: amount,
+              status: "Pending"
+            });
+            await updatePropertyById(propertyToUpdate.id, {
+              offerAmount: amount,
+              offerStatus: "Pending",
+              offers: offers
+            });
+          }
+
+          // Update client status
+          await updateClientStatus(client.name, "Under Offer");
+
+          // Note: Do NOT automatically link property to client - prospective properties is separate
+
+          // Log to activity log with both client and property references
+          await logActivity({
+            type: "offer",
+            entityType: "property", // Primary entity type
+            entityName: property.name,
+            clientName: client.name,
+            propertyName: property.name,
+            details: String(amount),
+            status: "Pending",
+            timestamp: timestamp || new Date().toISOString(),
+          });
+        }}
+      />
+
+      {/* Log Note Modal */}
+      <LogNoteModal
+        isOpen={showLogNoteModal}
+        onClose={() => setShowLogNoteModal(false)}
+        clients={clients}
+        properties={properties}
+        preSelectedClient={currentSelectedClient}
+        preSelectedProperty={currentSelectedProperty}
+        onSave={async ({ client, property, note, timestamp }) => {
+          const { updateClientById } = await import("./lib/clientsApi");
+          const { updatePropertyById } = await import("./lib/propertiesApi");
+          
+          // Update client notes if client is selected
+          if (client) {
+            const clientToUpdate = clients.find(c => c.id === client.id);
+            if (clientToUpdate?.id) {
+              const notes = Array.isArray(clientToUpdate.notes) 
+                ? [...clientToUpdate.notes, { date: timestamp, text: note }]
+                : [{ date: timestamp, text: note }];
+              await updateClientById(clientToUpdate.id, { notes });
+            }
+          }
+
+          // Update property notes if property is selected
+          if (property) {
+            const propertyToUpdate = properties.find(p => p.id === property.id);
+            if (propertyToUpdate?.id) {
+              const notes = Array.isArray(propertyToUpdate.notes)
+                ? [...propertyToUpdate.notes, { date: timestamp, text: note }]
+                : [{ date: timestamp, text: note }];
+              await updatePropertyById(propertyToUpdate.id, { notes });
+            }
+          }
+
+          // Log to activity log - single entry with both client and property if both are selected
+          const activityLogEntry = {
+            type: "note",
+            details: note,
+            timestamp: timestamp,
+          };
+
+          // Determine entityType and entityName based on what's selected
+          if (client && property) {
+            // Both selected - use primary entity as client, but include both in the log
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+            activityLogEntry.propertyName = property.name;
+          } else if (client) {
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+          } else if (property) {
+            activityLogEntry.entityType = "property";
+            activityLogEntry.entityName = property.name;
+            activityLogEntry.propertyName = property.name;
+          }
+
+          await logActivity(activityLogEntry);
+        }}
+      />
+
+      {/* Phone Call Modal */}
+      <LogNoteModal
+        isOpen={showPhoneCallModal}
+        onClose={() => setShowPhoneCallModal(false)}
+        clients={clients}
+        properties={properties}
+        preSelectedClient={currentSelectedClient}
+        preSelectedProperty={currentSelectedProperty}
+        title="Add Phone Call"
+        onSave={async ({ client, property, note, timestamp }) => {
+          const { updateClientById } = await import("./lib/clientsApi");
+          const { updatePropertyById } = await import("./lib/propertiesApi");
+          
+          // Update client notes if client is selected
+          if (client) {
+            const clientToUpdate = clients.find(c => c.id === client.id);
+            if (clientToUpdate?.id) {
+              const notes = Array.isArray(clientToUpdate.notes) 
+                ? [...clientToUpdate.notes, { date: timestamp, text: note }]
+                : [{ date: timestamp, text: note }];
+              await updateClientById(clientToUpdate.id, { notes });
+            }
+          }
+
+          // Update property notes if property is selected
+          if (property) {
+            const propertyToUpdate = properties.find(p => p.id === property.id);
+            if (propertyToUpdate?.id) {
+              const notes = Array.isArray(propertyToUpdate.notes)
+                ? [...propertyToUpdate.notes, { date: timestamp, text: note }]
+                : [{ date: timestamp, text: note }];
+              await updatePropertyById(propertyToUpdate.id, { notes });
+            }
+          }
+
+          // Log to activity log - single entry with both client and property if both are selected
+          const activityLogEntry = {
+            type: "phoneCall",
+            details: note,
+            timestamp: timestamp,
+          };
+
+          // Determine entityType and entityName based on what's selected
+          if (client && property) {
+            // Both selected - use primary entity as client, but include both in the log
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+            activityLogEntry.propertyName = property.name;
+          } else if (client) {
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+          } else if (property) {
+            activityLogEntry.entityType = "property";
+            activityLogEntry.entityName = property.name;
+            activityLogEntry.propertyName = property.name;
+          }
+
+          await logActivity(activityLogEntry);
+        }}
+      />
     </div>
   );
 }

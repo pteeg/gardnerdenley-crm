@@ -46,11 +46,11 @@ export async function updateClientById(id, updates) {
 }
 
 export async function archiveClientById(id) {
-  await updateClientById(id, { archived: true });
+  await updateClientById(id, { archived: true, status: "Archived" });
 }
 
 export async function restoreClientById(id) {
-  await updateClientById(id, { archived: false });
+  await updateClientById(id, { archived: false, status: "Searching" });
 }
 
 export async function deleteClientById(id) {

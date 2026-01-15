@@ -11,6 +11,14 @@
   padding: 15px 10px 20px 20px;
   display: flex;
   flex-direction: column;
+  transition: max-width 0.3s ease;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.wonga-body .gd-sidebar.collapsed ~ .wonga-content {
+  max-width: calc(100vw - 60px); /* Adjusted for collapsed sidebar (60px width) */
 }
 
 .wonga-content h1 {
@@ -20,9 +28,11 @@
   margin-bottom: 1rem;
 }
 
-/* Graph area - 60% of page height */
+/* Graph area - 60% of page height, but responsive */
 .graph-container {
   height: 60vh;
+  min-height: 300px;
+  max-height: 600px;
   background-color: white;
   border: 1px solid #dee2e6;
   border-radius: 8px;
@@ -32,14 +42,18 @@
   margin-bottom: 2rem;
   padding: 1rem 1rem 1.5rem 1rem; /* extra bottom padding for legend space */
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* KPI tiles */
 .wonga-tiles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .wonga-fy-controls {
@@ -52,7 +66,7 @@
 .wonga-fy-title {
   margin: 0;
   color: #555;
-  font-size: 30px;
+  font-size: clamp(1.5rem, 4vw, 30px);
   font-weight: 600;
   font-family: sans-serif;
   justify-self: center;
@@ -81,14 +95,14 @@
 }
 
 .wonga-tile-title {
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
   color: #666;
   margin: 0 0 0.35rem 0;
   font-family: sans-serif;
 }
 
 .wonga-tile-value {
-  font-size: 1.5rem;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
   font-weight: 600;
   color: #333;
   font-family: sans-serif;
@@ -101,7 +115,8 @@
 }
 
 .wonga-table {
-  width: 100%;
+  width: max-content;
+  min-width: 1200px; /* Ensure all columns are visible */
   border-collapse: collapse;
   margin-top: 1rem;
   background-color: white;
@@ -119,6 +134,17 @@
   background-color: #f9f9f9; /* light header like clients */
   color: #333;
   border-bottom: 1px solid #ddd;
+}
+
+/* Ensure Client Source and Disposal columns are visible */
+.wonga-table th:nth-child(2),
+.wonga-table td:nth-child(2) {
+  min-width: 120px; /* Client Source */
+}
+
+.wonga-table th:nth-child(8),
+.wonga-table td:nth-child(8) {
+  min-width: 100px; /* Disposal */
 }
 
 .wonga-table td {
@@ -155,4 +181,57 @@
   color: #999;
   padding: 2rem;
   font-style: italic;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .wonga-content {
+    padding: 10px 5px 15px 10px;
+  }
+
+  .graph-container {
+    height: 50vh;
+    min-height: 250px;
+    max-height: 400px;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .wonga-tiles {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .wonga-fy-controls {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .wonga-fy-left,
+  .wonga-fy-right {
+    justify-self: center;
+  }
+
+  .wonga-fy-title {
+    order: -1;
+  }
+
+  .wonga-fy-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .graph-container {
+    height: 40vh;
+    min-height: 200px;
+    max-height: 300px;
+    padding: 0.5rem;
+  }
+
+  .wonga-tile {
+    padding: 0.75rem 1rem;
+  }
 }

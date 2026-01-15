@@ -1,0 +1,194 @@
+.log-offer-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.log-offer-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.log-offer-modal .form-group {
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.log-offer-modal .form-group-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.log-offer-modal .form-group-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+  position: relative;
+}
+
+.log-offer-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.log-offer-modal .form-group .input-wrapper {
+  position: relative;
+}
+
+.log-offer-modal .search-input {
+  width: 100%;
+  padding: 0.75rem;
+  padding-right: 2.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.log-offer-modal .search-input:focus {
+  outline: none !important;
+  border: 1px solid #ddd !important;
+  box-shadow: none !important;
+}
+
+.log-offer-modal .favorite-filter-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.2rem;
+  bottom: 0.75rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: opacity 0.2s;
+}
+
+.log-offer-modal .favorite-filter-btn:hover {
+  opacity: 0.7;
+}
+
+.log-offer-modal .favorite-filter-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.log-offer-modal .input-wrapper:has(.selection-list) .search-input {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.log-offer-modal .selected-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f3f4f6;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.log-offer-modal .clear-selection-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.log-offer-modal .clear-selection-btn:hover {
+  background: #e5e7eb;
+}
+
+.log-offer-modal .selection-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  margin-top: -1px;
+  background: white;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.log-offer-modal .selection-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.log-offer-modal .selection-item:hover {
+  background: #f9fafb;
+}
+
+.log-offer-modal .selection-item:last-child {
+  border-bottom: none;
+}
+
+.log-offer-modal .modal-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.log-offer-modal .save-btn {
+  padding: 0.75rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.log-offer-modal .save-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.log-offer-modal .save-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.log-offer-modal .cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.log-offer-modal .cancel-btn:hover {
+  background: #f9fafb;
+}
+

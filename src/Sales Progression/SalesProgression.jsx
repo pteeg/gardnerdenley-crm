@@ -4,6 +4,7 @@ import "./SalesProgression.css";
 import Sidebar from "../Sidebar";
 import ProfessionalChooserButton from "../Contacts/ProfessionalChooserButton";
 import { v4 as uuidv4 } from "uuid";
+import { logActivity, subscribeToActivityLog } from "../lib/activityLogApi";
 
 // Helper function to format client names
 function formatClientName(clientName, clients = []) {
@@ -47,10 +48,81 @@ const SalesProgression = ({
   const [openClientMenuRow, setOpenClientMenuRow] = useState(null);
   const [clientMenuPosition, setClientMenuPosition] = useState({ top: 0, left: 0 });
   const [hoveredClientButtonRow, setHoveredClientButtonRow] = useState(null);
+  const [activities, setActivities] = useState([]);
 
-  const completedDeals = data.filter((row) => row.dealComplete && !row.fallenThrough);
+  // Subscribe to activity log to get offer acceptance dates
+  useEffect(() => {
+    const unsubscribe = subscribeToActivityLog((list) => {
+      setActivities(list);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Helper function to find accepted offer date for a deal
+  const getAcceptedOfferDate = (deal) => {
+    // Find the client name (might be formatted)
+    const clientName = deal.client;
+    
+    // Try to find matching client to get actual name
+    let actualClientName = clientName;
+    const client = clients.find(c => {
+      if (c.name === clientName) return true;
+      // Check formatted names
+      if (c.spouse1FirstName && c.spouse2FirstName) {
+        const bothFirstNames = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+        if (clientName === bothFirstNames || 
+            (c.spouse1Surname && clientName === `${bothFirstNames} ${c.spouse1Surname}`)) {
+          return true;
+        }
+      }
+      if (c.spouse1FirstName) {
+        const singleName = c.spouse1Surname 
+          ? `${c.spouse1FirstName} ${c.spouse1Surname}` 
+          : c.spouse1FirstName;
+        if (clientName === singleName) return true;
+      }
+      return false;
+    });
+    if (client) {
+      actualClientName = client.name;
+    }
+
+    // Find the accepted offer activity for this client and property
+    // Check for "Accepted", "Client Accepted", or "Vendor Accepted" statuses
+    const acceptedOffer = activities.find(a =>
+      a.type === "offer" &&
+      (a.status === "Accepted" || a.status === "Client Accepted" || a.status === "Vendor Accepted") &&
+      (a.clientName === actualClientName || a.clientName === clientName) &&
+      (a.propertyName === deal.address || a.entityName === deal.address)
+    );
+
+    if (acceptedOffer) {
+      // Convert timestamp to number for comparison
+      const timestamp = acceptedOffer.timestamp || acceptedOffer.createdAt;
+      if (timestamp) {
+        // If it's an ISO string, convert to date, otherwise use as number
+        return typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp;
+      }
+    }
+    
+    // Fallback: use createdAt from the deal itself if no activity found
+    const fallback = deal.createdAt;
+    return fallback ? (typeof fallback === 'string' ? new Date(fallback).getTime() : fallback) : 0;
+  };
+
+  // Sort deals by accepted offer date (most recent first)
+  const sortDealsByAcceptedDate = (deals) => {
+    return [...deals].sort((a, b) => {
+      const dateA = getAcceptedOfferDate(a);
+      const dateB = getAcceptedOfferDate(b);
+      // Sort descending (most recent first)
+      return dateB - dateA;
+    });
+  };
+
+  const completedDeals = sortDealsByAcceptedDate(data.filter((row) => row.dealComplete && !row.fallenThrough));
   const fallenDeals = data.filter((row) => row.fallenThrough);
-  const activeDeals = data.filter((row) => !row.dealComplete && !row.fallenThrough);
+  const activeDeals = sortDealsByAcceptedDate(data.filter((row) => !row.dealComplete && !row.fallenThrough));
   
   // Debug: Log the data structure
   console.log("SalesProgression data:", data);
@@ -179,8 +251,8 @@ const SalesProgression = ({
       if (newValue === "Done") {
         await markPropertyAsSold(propertyName);
         if (updateClientStatus) {
-          // If invoice is already paid, keep client as Completed; otherwise set to Exchanged
-          await updateClientStatus(clientName, invoicePaid === "Done" ? "Completed" : "Exchanged");
+          // If invoice is already paid, keep client as Archived; otherwise set to Exchanged
+          await updateClientStatus(clientName, invoicePaid === "Done" ? "Archived" : "Exchanged");
         }
       } else {
         // Only revert if the deal hasn't been completed by invoice payment
@@ -212,7 +284,7 @@ const SalesProgression = ({
       }
       if (updateClientStatus) {
         if (markComplete) {
-          await updateClientStatus(clientName, "Completed");
+          await updateClientStatus(clientName, "Archived");
         } else {
           // If invoice is not paid, set status based on current exchanged state
           const exchangedState = (row && row.exchanged) || currentData[rowIndex].exchanged;
@@ -302,6 +374,10 @@ const SalesProgression = ({
   const [fallThroughReason, setFallThroughReason] = useState("");
   const [pendingFallRowIndex, setPendingFallRowIndex] = useState(null);
   const [showPaymentExpectedAlert, setShowPaymentExpectedAlert] = useState(false);
+  // Edit modal state for fallen deals
+  const [showEditFallenModal, setShowEditFallenModal] = useState(false);
+  const [editFallenReason, setEditFallenReason] = useState("");
+  const [editFallenRowIndex, setEditFallenRowIndex] = useState(null);
   // Add-note modal state (from mortgage/survey date rows)
   const [showQuickNoteModal, setShowQuickNoteModal] = useState(false);
   const [quickNoteText, setQuickNoteText] = useState("");
@@ -311,6 +387,7 @@ const SalesProgression = ({
 
   // View scope: 'active' | 'completed' | 'fallen'
   const [viewScope, setViewScope] = useState('active');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="sales-progression">
@@ -328,71 +405,74 @@ const SalesProgression = ({
             { key: "completed", label: "Completed Deals", active: viewScope === 'active' && showCompleted, onClick: () => { setViewScope('active'); setShowCompleted(true); } },
             { key: "fallen", label: "Archived", active: viewScope === 'fallen', onClick: () => { setViewScope('fallen'); setShowCompleted(false); } },
           ]}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
         <div className="sales-progression-content">
           {/* Page title matching Contacts page heading style */}
           <h2 className="sp-subtitle">
             {viewScope === 'fallen' ? 'Archived' : (showCompleted ? 'Completed Deals' : 'Active Deals')}
           </h2>
-          <div
-            className="sales-table-container"
-            style={{ overflowX: ((showCompleted ? completedDeals : activeDeals).length === 0) ? 'hidden' : undefined }}
-          >
           {((viewScope === 'fallen' ? fallenDeals : (showCompleted ? completedDeals : activeDeals)).length === 0) ? (
             <div style={{ padding: '1rem', color: '#555555', fontFamily: 'sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '240px', textAlign: 'center', width: '100%' }}>
               {viewScope === 'fallen' ? 'No Fallen Through Deals' : (showCompleted ? 'No Completed Deals in Progression' : 'No Active Deals in Progression. Relax 😎')}
             </div>
           ) : (
-          <table className="sales-progression-table">
-          <thead>
-            {viewScope === 'fallen' ? (
-              <tr>
-                <th>Client</th>
-                <th>Property</th>
-                <th>Reason</th>
-              </tr>
-            ) : (
-              <tr>
-                <th>Client</th>
-                <th>Property</th>
-                <th>Contract Sent</th>
-                <th>Contract Signed</th>
-                <th>Client ID Sent</th>
-                <th>AML</th>
-                <th>Solicitor Recommended</th>
-                <th>Solicitor Engaged</th>
-                <th>Solicitor Details</th>
-                <th>Mortgage Advisor Recommended</th>
-                <th>Mortgage Advisor Details</th>
-                <th>Mortgage Valuation Booked</th>
-                <th>Mortgage Offer Received</th>
-                <th>Surveyor Recommended</th>
-                <th>Surveyor Details</th>
-                <th>Survey Booked</th>
-                <th>SDLT Advisor Recommended</th>
-                <th>SDLT Advisor Details</th>
-                <th>Target Exchange Date</th>
-                <th>Target Completion Date</th>
-                <th>Removals Recommended</th>
-                <th>Removals Booked</th>
-                <th>Exchange Date Set</th>
-                <th>Completion Date Set</th>
-                <th>Invoice Sent</th>
-                <th>Exchanged</th>
-                <th>Completed</th>
-                <th>Payment Expected</th>
-                <th>Fee %</th>
-                <th>Invoice Amount</th>
-                <th>Invoice Paid</th>
-              </tr>
-            )}
-          </thead>
-          <tbody>
-            {(viewScope === 'fallen' ? fallenDeals : (showCompleted ? completedDeals : activeDeals)).map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {(viewScope === 'fallen' || !showCompleted) && (
+          <>
+          <div style={{ overflowX: "auto" }}>
+            <div className="sales-progression-unified-grid" style={{ display: "grid", gridTemplateColumns: viewScope === 'fallen' ? "1fr" : "1fr", alignItems: "center", justifyItems: "start", minWidth: "max-content", padding: "1rem", fontFamily: "sans-serif", boxSizing: "border-box", gap: "1rem", rowGap: "1rem" }}>
+              {/* Header Row */}
+              <div style={{ display: "grid", gridTemplateColumns: viewScope === 'fallen' ? "50px 200px 200px 1fr" : "50px 200px 200px 150px 150px 150px 150px 150px 180px 180px 200px 180px 230px 200px 150px 150px 200px 230px 150px 180px 200px 200px 180px 200px 150px 150px 150px 150px 200px 120px 150px 120px", alignItems: "stretch", justifyItems: "start", minWidth: "max-content", padding: "1rem 1rem 0.5rem 1rem" }}>
+                {viewScope === 'fallen' ? (
+                  <>
+                    <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333" }}></div>
+                    <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333" }}>Client</div>
+                    <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333" }}>Property</div>
+                    <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333" }}>Reason</div>
+                  </>
+                ) : (
+                    <>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333" }}></div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "1rem" }}>Client</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Property</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Send Contract</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Sign Contract</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Send Client ID</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>AML</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Recommend Solicitor</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Engage Solicitor</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Solicitor Details</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Recommend Mortgage Advisor</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Mortgage Advisor Details</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Book Mortgage Valuation</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Receive Mortgage Offer</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Recommend Surveyor</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Surveyor Details</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Book Survey</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Recommend SDLT Advisor</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>SDLT Advisor Details</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Target Exchange Date</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Target Completion Date</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Recommend Removals</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Book Removals</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Set Exchange Date</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Set Completion Date</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "0.75rem" }}>Send Invoice</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "0.75rem" }}>Exchange</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Complete</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Payment Expected</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Fee %</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "2.5rem" }}>Invoice Amount</div>
+                      <div className="sales-progression-header-column" style={{ fontWeight: 600, fontSize: "1rem", color: "#333", marginRight: "0" }}>Receive Invoice</div>
+                    </>
+                )}
+              </div>
+              
+              {/* Tile Rows */}
+          {(viewScope === 'fallen' ? fallenDeals : (showCompleted ? completedDeals : activeDeals)).map((row, rowIndex) => (
+            <div key={rowIndex} className="activity-tile" style={{ display: "grid", gridTemplateColumns: viewScope === 'fallen' ? "50px 200px 200px 1fr" : "50px 200px 200px 150px 150px 150px 150px 150px 180px 180px 200px 180px 230px 200px 150px 150px 200px 230px 150px 180px 200px 200px 180px 200px 150px 150px 150px 150px 200px 120px 150px 120px", alignItems: "center", justifyItems: "start", minWidth: "max-content", padding: "1rem", margin: 0 }}>
+                <div className="sales-progression-tile-column" style={{ marginRight: "0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {(viewScope === 'fallen' || !showCompleted) && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -422,20 +502,21 @@ const SalesProgression = ({
                         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#555555', display: 'inline-block' }} />
                       </div>
                     </button>
-                    )}
-                    <span>{formatClientName(row.client, clients)}</span>
-                  </div>
-                </td>
-                <td>{row.address}</td>
+                  )}
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "1rem" }}>
+                  <span>{formatClientName(row.client, clients)}</span>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>{row.address}</div>
 
                 {viewScope === 'fallen' ? (
-                  <td>{row.fallThroughReason || '—'}</td>
+                  <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>{row.fallThroughReason || '—'}</div>
                 ) : null}
 
                 {viewScope === 'fallen' ? null : (
                 <>
                 {/* Contract & ID */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.contractSent}
                     onChange={(newValue) =>{
@@ -443,16 +524,16 @@ const SalesProgression = ({
                       console.log("SalesProgression: Updated contractSent in row", rowIndex, "to", newValue);
                     }}
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.contractSigned}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "contractSigned", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.clientIdDocument || row.id || "Not Done"}
                     onChange={(newValue) => {
@@ -461,34 +542,34 @@ const SalesProgression = ({
                       handleStatusChange(rowIndex, "clientIdDocument", newValue);
                     }}
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.aml}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "aml", newValue)
                     }
                   />
-                </td>
+                </div>
 
                 {/* Solicitor */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.solicitorRecommended}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "solicitorRecommended", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.solicitorEngaged}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "solicitorEngaged", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <ProfessionalChooserButton
                     type="Solicitor"
                     value={row.solicitorDetails?.id || ""}
@@ -499,18 +580,18 @@ const SalesProgression = ({
                       handleAddProfessional(rowIndex, newProfessional, "solicitorDetails")
                     }
                   />
-                </td>
+                </div>
 
                 {/* Mortgage */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.mortgageAdvisorRecommended}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "mortgageAdvisorRecommended", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <ProfessionalChooserButton
                     type="Mortgage Advisor"
                     value={row.mortgageAdvisorDetails?.id || ""}
@@ -521,8 +602,8 @@ const SalesProgression = ({
                       handleAddProfessional(rowIndex, newProfessional, "mortgageAdvisorDetails")
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="date"
@@ -539,8 +620,8 @@ const SalesProgression = ({
                       <i className="fa-solid fa-pen-to-square" style={{ color: '#555555' }} />
                     </button>
                   </div>
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="date"
@@ -557,18 +638,18 @@ const SalesProgression = ({
                       <i className="fa-solid fa-pen-to-square" style={{ color: '#555555' }} />
                     </button>
                   </div>
-                </td>
+                </div>
 
                 {/* Survey */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.surveyorRecommended}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "surveyorRecommended", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <ProfessionalChooserButton
                     type="Surveyor"
                     value={row.surveyorDetails?.id || ""}
@@ -579,8 +660,8 @@ const SalesProgression = ({
                       handleAddProfessional(rowIndex, newProfessional, "surveyorDetails")
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="date"
@@ -597,18 +678,18 @@ const SalesProgression = ({
                       <i className="fa-solid fa-pen-to-square" style={{ color: '#555555' }} />
                     </button>
                   </div>
-                </td>
+                </div>
 
                 {/* SDLT */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.sdltAdvisorRecommended}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "sdltAdvisorRecommended", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <ProfessionalChooserButton
                     type="SDLT Advisor"
                     value={row.sdltAdvisorDetails?.id || ""}
@@ -619,97 +700,97 @@ const SalesProgression = ({
                       handleAddProfessional(rowIndex, newProfessional, "sdltAdvisorDetails")
                     }
                   />
-                </td>
+                </div>
 
                 {/* Target dates */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <input
                     type="date"
                     value={getDateInputValue(rowIndex, "targetExchangeDate", row.targetExchangeDate)}
                     onChange={(e) => handleDateTyping(rowIndex, "targetExchangeDate", e.target.value)}
                     onBlur={() => handleDateBlur(rowIndex, "targetExchangeDate", row.targetExchangeDate)}
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <input
                     type="date"
                     value={getDateInputValue(rowIndex, "targetCompletionDate", row.targetCompletionDate)}
                     onChange={(e) => handleDateTyping(rowIndex, "targetCompletionDate", e.target.value)}
                     onBlur={() => handleDateBlur(rowIndex, "targetCompletionDate", row.targetCompletionDate)}
                   />
-                </td>
+                </div>
 
                 {/* Removals */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.removalsRecommended}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "removalsRecommended", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.removalsBooked}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "removalsBooked", newValue)
                     }
                   />
-                </td>
+                </div>
 
                 {/* Exchange / completion dates */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <input
                     type="date"
                     value={getDateInputValue(rowIndex, "exchangeDateSet", row.exchangeDateSet)}
                     onChange={(e) => handleDateTyping(rowIndex, "exchangeDateSet", e.target.value)}
                     onBlur={() => handleDateBlur(rowIndex, "exchangeDateSet", row.exchangeDateSet)}
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <input
                     type="date"
                     value={getDateInputValue(rowIndex, "completionDateSet", row.completionDateSet)}
                     onChange={(e) => handleDateTyping(rowIndex, "completionDateSet", e.target.value)}
                     onBlur={() => handleDateBlur(rowIndex, "completionDateSet", row.completionDateSet)}
                   />
-                </td>
+                </div>
 
                 {/* Invoice sent followed by exchanged/completed */}
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "0.75rem" }}>
                   <StatusToggle
                     value={row.invoiceSent}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "invoiceSent", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "0.75rem" }}>
                   <StatusToggle
                     value={row.exchanged}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "exchanged", newValue)
                     }
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <StatusToggle
                     value={row.completed || "Not Done"}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "completed", newValue)
                     }
                   />
-                </td>
+                </div>
                 
-                <td>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <input
                     type="date"
                     value={getDateInputValue(rowIndex, "paymentExpected", row.paymentExpected)}
                     onChange={(e) => handleDateTyping(rowIndex, "paymentExpected", e.target.value)}
                     onBlur={() => handleDateBlur(rowIndex, "paymentExpected", row.paymentExpected)}
                   />
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "2.5rem" }}>
                   <input
                     type="text"
                     value={
@@ -721,8 +802,8 @@ const SalesProgression = ({
                     placeholder="1.5%"
                     style={{ width: "80px" }}
                   />
-                </td>
-                <td className="currency-input">
+                </div>
+                <div className="sales-progression-tile-column currency-input" style={{ marginRight: "2.5rem" }}>
                   <div className="currency-wrapper">
                     <span className="currency-symbol">£</span>
                     <input
@@ -735,7 +816,6 @@ const SalesProgression = ({
                       onChange={(e) => {
                         const rawValue = e.target.value.replace(/,/g, "");
                         if (!/^\d*$/.test(rawValue)) return;
-
                         handleStatusChange(
                           rowIndex,
                           "invoiceAmount",
@@ -745,25 +825,25 @@ const SalesProgression = ({
                       placeholder="0"
                     />
                   </div>
-                </td>
-                <td>
+                </div>
+                <div className="sales-progression-tile-column" style={{ marginRight: "0" }}>
                   <StatusToggle
                     value={row.invoicePaid}
                     onChange={(newValue) =>
                       handleStatusChange(rowIndex, "invoicePaid", newValue)
                     }
                   />
-                </td>
-                </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-          </table>
+                </div>
+              </>
+              )}
+            </div>
+          ))}
+            </div>
+          </div>
+          </>
           )}
           </div>
         </div>
-      </div>
       {openClientMenuRow !== null && (
         <div
           style={{
@@ -780,34 +860,46 @@ const SalesProgression = ({
           onClick={(e) => e.stopPropagation()}
         >
           {viewScope === 'fallen' ? (
-            <button type="button" style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', cursor: 'pointer' }} onClick={async () => {
-              // Revive: remove fallenThrough; set dealComplete based on invoicePaid
-              const currentData = fallenDeals;
-              const row = currentData[openClientMenuRow];
-              if (row?.id) {
-                const { updateSalesProgressionById } = await import('../lib/salesProgressionsApi');
-                const newComplete = row.invoicePaid === 'Done';
-                await updateSalesProgressionById(row.id, { fallenThrough: false, fallThroughReason: '', dealComplete: newComplete });
-                // Update the property to set it back to Accepted and Matched
-                const property = properties.find(p => p.name === row.address);
-                if (property?.id) {
-                  const { updatePropertyById } = await import('../lib/propertiesApi');
-                      const offers = Array.isArray(property.offers) ? [...property.offers] : [];
-                      offers.push({ date: new Date().toISOString(), amount: null, status: 'Revived' });
-                      await updatePropertyById(property.id, {
-                    offerStatus: 'Accepted',
-                        status: 'Matched',
-                        offers
-                  });
+            <>
+              <button type="button" style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', cursor: 'pointer' }} onClick={() => {
+                const currentData = fallenDeals;
+                const row = currentData[openClientMenuRow];
+                if (row) {
+                  setEditFallenRowIndex(openClientMenuRow);
+                  setEditFallenReason(row.fallThroughReason || '');
+                  setShowEditFallenModal(true);
                 }
-                // Update client status to Matched
-                const clientName = row.client;
-                if (updateClientStatus) {
-                  await updateClientStatus(clientName, 'Matched');
+                setOpenClientMenuRow(null);
+              }}>Edit</button>
+              <button type="button" style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', cursor: 'pointer' }} onClick={async () => {
+                // Revive: remove fallenThrough; set dealComplete based on invoicePaid
+                const currentData = fallenDeals;
+                const row = currentData[openClientMenuRow];
+                if (row?.id) {
+                  const { updateSalesProgressionById } = await import('../lib/salesProgressionsApi');
+                  const newComplete = row.invoicePaid === 'Done';
+                  await updateSalesProgressionById(row.id, { fallenThrough: false, fallThroughReason: '', dealComplete: newComplete });
+                  // Update the property to set it back to Accepted and Matched
+                  const property = properties.find(p => p.name === row.address);
+                  if (property?.id) {
+                    const { updatePropertyById } = await import('../lib/propertiesApi');
+                        const offers = Array.isArray(property.offers) ? [...property.offers] : [];
+                        offers.push({ date: new Date().toISOString(), amount: null, status: 'Revived' });
+                        await updatePropertyById(property.id, {
+                      offerStatus: 'Accepted',
+                          status: 'Matched',
+                          offers
+                    });
+                  }
+                  // Update client status to Matched
+                  const clientName = row.client;
+                  if (updateClientStatus) {
+                    await updateClientStatus(clientName, 'Matched');
+                  }
                 }
-              }
-              setOpenClientMenuRow(null);
-            }}>Revive</button>
+                setOpenClientMenuRow(null);
+              }}>Revive</button>
+            </>
           ) : (
             <>
               <button type="button" style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', cursor: 'pointer' }} onClick={() => { /* no-op for now */ setOpenClientMenuRow(null); }}>Delayed Completion</button>
@@ -861,10 +953,47 @@ const SalesProgression = ({
                       offers
                     });
                   }
-                  const clientName = row.client;
-                  if (updateClientStatus) {
-                    await updateClientStatus(clientName, 'Searching');
+                  const displayClientName = row.client;
+                  
+                  // Find the actual client name (not the display name) for activity logging
+                  let actualClientName = displayClientName;
+                  const client = clients.find(c => {
+                    // Check if display name matches
+                    if (c.name === displayClientName) return true;
+                    // Check formatted names
+                    if (c.spouse1FirstName && c.spouse2FirstName) {
+                      const bothFirstNames = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+                      if (displayClientName === bothFirstNames || 
+                          (c.spouse1Surname && displayClientName === `${bothFirstNames} ${c.spouse1Surname}`)) {
+                        return true;
+                      }
+                    }
+                    if (c.spouse1FirstName) {
+                      const singleName = c.spouse1Surname 
+                        ? `${c.spouse1FirstName} ${c.spouse1Surname}` 
+                        : c.spouse1FirstName;
+                      if (displayClientName === singleName) return true;
+                    }
+                    return false;
+                  });
+                  if (client) {
+                    actualClientName = client.name;
                   }
+                  
+                  if (updateClientStatus) {
+                    await updateClientStatus(actualClientName, 'Searching');
+                  }
+                  
+                  // Log activity for fallen through deal (will appear in both client and property logs)
+                  await logActivity({
+                    type: "fallenThrough",
+                    entityType: "property",
+                    entityName: row.address,
+                    clientName: actualClientName,
+                    propertyName: row.address,
+                    details: fallThroughReason || "",
+                    status: null
+                  });
                 }
                 setShowFallThroughModal(false);
                 setPendingFallRowIndex(null);
@@ -881,6 +1010,87 @@ const SalesProgression = ({
             <p style={{ marginTop: 0, color: '#555' }}>Set a Payment Expected date before marking Invoice Paid as Done.</p>
             <div className="modal-buttons">
               <button className="save-btn" onClick={() => setShowPaymentExpectedAlert(false)}>Okay</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showEditFallenModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 500 }}>
+            <h3>Edit Fall-Through Reason</h3>
+            <p style={{ marginTop: 0, color: '#555' }}>Update the reason for this fallen through deal.</p>
+            <div className="form-group">
+              <textarea
+                value={editFallenReason}
+                onChange={(e) => setEditFallenReason(e.target.value)}
+                placeholder="Enter reason"
+                style={{ width: '100%', minHeight: 120 }}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button className="cancel-btn" onClick={() => { setShowEditFallenModal(false); setEditFallenRowIndex(null); setEditFallenReason(''); }}>Cancel</button>
+              <button className="save-btn" onClick={async () => {
+                const currentData = fallenDeals;
+                const row = currentData[editFallenRowIndex];
+                if (row?.id) {
+                  const { updateSalesProgressionById } = await import('../lib/salesProgressionsApi');
+                  await updateSalesProgressionById(row.id, { fallThroughReason: editFallenReason });
+                  
+                  // Find the actual client name (not the display name) for activity log update
+                  const displayClientName = row.client;
+                  let actualClientName = displayClientName;
+                  const client = clients.find(c => {
+                    // Check if display name matches
+                    if (c.name === displayClientName) return true;
+                    // Check formatted names
+                    if (c.spouse1FirstName && c.spouse2FirstName) {
+                      const bothFirstNames = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+                      if (displayClientName === bothFirstNames || 
+                          (c.spouse1Surname && displayClientName === `${bothFirstNames} ${c.spouse1Surname}`)) {
+                        return true;
+                      }
+                    }
+                    if (c.spouse1FirstName) {
+                      const singleName = c.spouse1Surname 
+                        ? `${c.spouse1FirstName} ${c.spouse1Surname}` 
+                        : c.spouse1FirstName;
+                      if (displayClientName === singleName) return true;
+                    }
+                    return false;
+                  });
+                  if (client) {
+                    actualClientName = client.name;
+                  }
+                  
+                  // Update the activity log entry for this fallen through deal
+                  try {
+                    const { getDocs, query, collection, where } = await import('firebase/firestore');
+                    const { db } = await import('../lib/firebase');
+                    const { updateActivityLog } = await import('../lib/activityLogApi');
+                    const activityLogCol = collection(db, 'activityLog');
+                    const q = query(
+                      activityLogCol,
+                      where('type', '==', 'fallenThrough'),
+                      where('propertyName', '==', row.address),
+                      where('clientName', '==', actualClientName)
+                    );
+                    const snap = await getDocs(q);
+                    if (!snap.empty) {
+                      // Update the most recent fallen through entry (in case there are multiple)
+                      const entries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                      // Sort by createdAt descending to get the most recent
+                      entries.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                      const mostRecentEntry = entries[0];
+                      await updateActivityLog(mostRecentEntry.id, { details: editFallenReason });
+                    }
+                  } catch (e) {
+                    console.error('Error updating activity log for fallen through deal:', e);
+                  }
+                }
+                setShowEditFallenModal(false);
+                setEditFallenRowIndex(null);
+                setEditFallenReason('');
+              }}>Save</button>
             </div>
           </div>
         </div>
@@ -939,6 +1149,7 @@ const SalesProgression = ({
                           const { getDocs, query, collection, where } = await import('firebase/firestore');
                           const { db } = await import('../lib/firebase');
                           const { updateClientById } = await import('../lib/clientsApi');
+                          const { logActivity } = await import('../lib/activityLogApi');
                           const clientsCol = collection(db, 'clients');
                           const q = query(clientsCol, where('name', '==', quickNoteClientName));
                           const snap = await getDocs(q);
@@ -946,10 +1157,18 @@ const SalesProgression = ({
                             const doc = snap.docs[0];
                             const data = doc.data() || {};
                             const prefix = quickNoteSource ? `${quickNoteSource} — ` : "";
+                            const noteText = `${prefix}${text}`;
                             const notes = Array.isArray(data.notes)
-                              ? [...data.notes, { date: new Date().toISOString(), text: `${prefix}${text}` }]
-                              : [{ date: new Date().toISOString(), text: `${prefix}${text}` }];
+                              ? [...data.notes, { date: new Date().toISOString(), text: noteText }]
+                              : [{ date: new Date().toISOString(), text: noteText }];
                             await updateClientById(doc.id, { notes });
+                            // Log the activity
+                            await logActivity({
+                              type: "note",
+                              entityType: "client",
+                              entityName: quickNoteClientName,
+                              details: noteText,
+                            });
                           }
                         }
                       } catch (e) { console.error('Failed to add note from Sales Progression:', e); }

@@ -39,8 +39,20 @@
 
 .contacts-main {
   flex: 1;
-  padding: 0 10px 20px 20px;
+  /* Let the background run full-bleed while inner pages handle their own padding */
+  padding: 0 20px 20px 20px;
   width: 100%; /* Ensure it stretches full width when sidebar is hidden */
+  transition: max-width 0.3s ease;
+  background: #f8f9fa;
+}
+
+/* When a client profile is open, remove horizontal padding to allow full-width background */
+.contacts-main.client-profile-open {
+  padding: 0 0 20px 0;
+}
+
+.contacts-container .gd-sidebar.collapsed ~ .contacts-main {
+  max-width: calc(100vw - 60px); /* Adjusted for collapsed sidebar (60px width) */
 }
 
 .placeholder-text {

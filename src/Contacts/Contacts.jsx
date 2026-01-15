@@ -23,7 +23,8 @@ function Contacts({
   // ✅ NEW: receive helper from App.jsx
   createNewSalesProgression,
   openClientName,
-  onConsumeOpenClient
+  onConsumeOpenClient,
+  onSelectedClientChange
 }) {
   const [subPage, setSubPage] = useState("Clients");
   const [clientsSubFilter, setClientsSubFilter] = useState({ mode: 'all', value: '' }); // mode: all|status|type|fav
@@ -34,6 +35,7 @@ function Contacts({
   const [showArchived, setShowArchived] = useState(false);
   const [showArchivedProfessionals, setShowArchivedProfessionals] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Helper to format a client's display name like elsewhere in the app
   const formatClientName = (c) => {
@@ -50,6 +52,13 @@ function Contacts({
     }
     return c.name || "";
   };
+
+  // Notify parent when selected client changes
+  React.useEffect(() => {
+    if (onSelectedClientChange) {
+      onSelectedClientChange(selectedClient);
+    }
+  }, [selectedClient, onSelectedClientChange]);
 
   // When asked to open a specific contact by name, try clients first; if not found, try professionals
   React.useEffect(() => {
@@ -139,11 +148,14 @@ function Contacts({
     const target = clients.find(c => c.name === clientName);
     if (target?.id) {
       const { updateClientById } = await import("../lib/clientsApi");
-      await updateClientById(target.id, { status: newStatus, archived: false });
+      // When status is "Archived", also set archived to true
+      // When status is anything else (e.g., "Under Offer"), set archived to false (unarchives the client)
+      const archived = newStatus === "Archived";
+      await updateClientById(target.id, { status: newStatus, archived });
       // Optimistically update local state so UI reflects immediately
-      setClients(prev => prev.map(c => c.id === target.id ? { ...c, status: newStatus, archived: false } : c));
+      setClients(prev => prev.map(c => c.id === target.id ? { ...c, status: newStatus, archived } : c));
       // If this client is currently open, refresh the selectedClient too
-      setSelectedClient(prev => (prev && prev.id === target.id ? { ...prev, status: newStatus, archived: false } : prev));
+      setSelectedClient(prev => (prev && prev.id === target.id ? { ...prev, status: newStatus, archived } : prev));
     }
   };
 
@@ -242,31 +254,41 @@ function Contacts({
       await updateClientById(client.id, updatedClient);
     }
 
-    // Update sales progressions with new client name
-    const progressionsToUpdate = salesProgressions.filter(row => row.client === originalName);
-    for (const progression of progressionsToUpdate) {
-      if (progression.id) {
-        const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
-        await updateSalesProgressionById(progression.id, { client: updatedClient.name });
+    // Update sales progressions with new client name (only if name changed)
+    if (updatedClient.name && updatedClient.name !== originalName) {
+      const progressionsToUpdate = salesProgressions.filter(row => row.client === originalName);
+      for (const progression of progressionsToUpdate) {
+        if (progression.id) {
+          const { updateSalesProgressionById } = await import("../lib/salesProgressionsApi");
+          await updateSalesProgressionById(progression.id, { client: updatedClient.name });
+        }
+      }
+
+      // Update properties with new client name
+      const propertiesToUpdate = properties.filter(p => p.linkedClient === originalName);
+      for (const property of propertiesToUpdate) {
+        if (property.id) {
+          const { updatePropertyById } = await import("../lib/propertiesApi");
+          await updatePropertyById(property.id, { linkedClient: updatedClient.name });
+        }
       }
     }
 
-    // Update properties with new client name
-    const propertiesToUpdate = properties.filter(p => p.linkedClient === originalName);
-    for (const property of propertiesToUpdate) {
-      if (property.id) {
-        const { updatePropertyById } = await import("../lib/propertiesApi");
-        await updatePropertyById(property.id, { linkedClient: updatedClient.name });
-      }
+    // Update selectedClient by merging updates with existing client data
+    if (selectedClient && selectedClient.name === originalName) {
+      setSelectedClient(prev => ({ ...prev, ...updatedClient }));
     }
-
-    setSelectedClient(updatedClient);
   };
+
+  const isClientProfileOpen = subPage === "Clients" && !!selectedClient;
 
   return (
     <div className="contacts-container">
-      <Sidebar
+      {!isClientProfileOpen && (
+        <Sidebar
         title="Contacts"
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         items={[
           {
             key: "clients",
@@ -278,55 +300,57 @@ function Contacts({
           ...(subPage === 'Clients' ? [{ key: 'clients-sub', label: (
             <div className="gd-sidebar-subsection slide-in">
               <button
-                className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'all' ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'all', value: '' })}
+                className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'all' && !showArchived ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'all', value: '' }); setShowArchived(false); }}
                 type="button"
               >All</button>
               <button
-                className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'fav' ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'fav', value: '' })}
+                className={`gd-sidebar-item subitem ${clientsSubFilter.mode === 'fav' && !showArchived ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'fav', value: '' }); setShowArchived(false); }}
                 type="button"
               >Favourites</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Searching') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Searching' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Searching' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'status', value: 'Searching' }); setShowArchived(false); }}
                 type="button"
               >Searching</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Under Offer') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Under Offer' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Under Offer' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'status', value: 'Under Offer' }); setShowArchived(false); }}
                 type="button"
               >Under Offer</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Matched') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Matched' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Matched' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'status', value: 'Matched' }); setShowArchived(false); }}
                 type="button"
               >Matched</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Exchanged') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Exchanged' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Exchanged' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'status', value: 'Exchanged' }); setShowArchived(false); }}
                 type="button"
               >Exchanged</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'status' && clientsSubFilter.value === 'Completed') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'status', value: 'Completed' })}
-                type="button"
-              >Completed</button>
-              <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Client') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'type', value: 'Client' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Client' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'type', value: 'Client' }); setShowArchived(false); }}
                 type="button"
               >Client</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Developer') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'type', value: 'Developer' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Developer' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'type', value: 'Developer' }); setShowArchived(false); }}
                 type="button"
               >Developer</button>
               <button
-                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Vendor') ? 'active' : ''}`}
-                onClick={() => setClientsSubFilter({ mode: 'type', value: 'Vendor' })}
+                className={`gd-sidebar-item subitem ${(clientsSubFilter.mode === 'type' && clientsSubFilter.value === 'Vendor' && !showArchived) ? 'active' : ''}`}
+                onClick={() => { setClientsSubFilter({ mode: 'type', value: 'Vendor' }); setShowArchived(false); }}
                 type="button"
               >Vendor</button>
+              <button
+                className={`gd-sidebar-item subitem ${showArchived ? 'active' : ''}`}
+                onClick={() => { toggleArchivedView(); setClientsSubFilter({ mode: 'all', value: '' }); }}
+                type="button"
+              >
+                Archived
+              </button>
             </div>
           ), active: false, onClick: () => {} }] : []),
           {
@@ -339,56 +363,64 @@ function Contacts({
           ...(subPage === 'Professionals' ? [{ key: 'pros-sub', label: (
             <div className="gd-sidebar-subsection slide-in">
               <button
-                className={`gd-sidebar-item subitem ${professionalsSubFilter.mode === 'all' ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'all' })}
+                className={`gd-sidebar-item subitem ${professionalsSubFilter.mode === 'all' && !showArchivedProfessionals ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'all' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >All</button>
               <button
-                className={`gd-sidebar-item subitem ${professionalsSubFilter.mode === 'fav' ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'fav' })}
+                className={`gd-sidebar-item subitem ${professionalsSubFilter.mode === 'fav' && !showArchivedProfessionals ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'fav' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Favourites</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Solicitor') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Solicitor' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Solicitor' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'Solicitor' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Solicitor</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Mortgage Advisor') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Mortgage Advisor' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Mortgage Advisor' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'Mortgage Advisor' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Mortgage Advisor</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Surveyor') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Surveyor' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Surveyor' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'Surveyor' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Surveyor</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'SDLT Advisor') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'SDLT Advisor' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'SDLT Advisor' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'SDLT Advisor' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >SDLT Advisor</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Agent') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Agent' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Agent' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'Agent' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Agent</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Developer') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Developer' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Developer' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'Developer' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Developer</button>
               <button
-                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Other') ? 'active' : ''}`}
-                onClick={() => setProfessionalsSubFilter({ mode: 'type', value: 'Other' })}
+                className={`gd-sidebar-item subitem ${(professionalsSubFilter.mode === 'type' && professionalsSubFilter.value === 'Other' && !showArchivedProfessionals) ? 'active' : ''}`}
+                onClick={() => { setProfessionalsSubFilter({ mode: 'type', value: 'Other' }); setShowArchivedProfessionals(false); }}
                 type="button"
               >Other</button>
+              <button
+                className={`gd-sidebar-item subitem ${showArchivedProfessionals ? 'active' : ''}`}
+                onClick={() => { setShowArchivedProfessionals(prev => !prev); setProfessionalsSubFilter({ mode: 'all' }); }}
+                type="button"
+              >
+                Archived
+              </button>
             </div>
           ), active: false, onClick: () => {} }] : []),
         ]}
       />
+      )}
 
-      <div className="contacts-main">
+      <div className={`contacts-main ${isClientProfileOpen ? 'client-profile-open' : ''}`}>
         {subPage === "Clients" && !selectedClient && (
           <>
             <ClientsTable
@@ -401,6 +433,37 @@ function Contacts({
                   }
                   if (clientsSubFilter.mode === 'status') {
                     if (!clientsSubFilter.value) return true;
+                    // For "Archived" status, show archived clients that have had a deal completed
+                    if (clientsSubFilter.value === 'Archived') {
+                      // Check if client is archived and has a completed deal (invoicePaid === "Done")
+                      const hasCompletedDeal = salesProgressions.some(sp => {
+                        // Match client name (handle formatted names)
+                        const clientName = c.name;
+                        const spClientName = sp.client;
+                        // Direct match
+                        if (spClientName === clientName) {
+                          return sp.invoicePaid === "Done";
+                        }
+                        // Check formatted names
+                        if (c.spouse1FirstName && c.spouse2FirstName) {
+                          const bothFirstNames = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+                          if (spClientName === bothFirstNames || 
+                              (c.spouse1Surname && spClientName === `${bothFirstNames} ${c.spouse1Surname}`)) {
+                            return sp.invoicePaid === "Done";
+                          }
+                        }
+                        if (c.spouse1FirstName) {
+                          const singleName = c.spouse1Surname 
+                            ? `${c.spouse1FirstName} ${c.spouse1Surname}` 
+                            : c.spouse1FirstName;
+                          if (spClientName === singleName) {
+                            return sp.invoicePaid === "Done";
+                          }
+                        }
+                        return false;
+                      });
+                      return c.archived === true && hasCompletedDeal;
+                    }
                     return (c.status || '').toLowerCase() === clientsSubFilter.value.toLowerCase();
                   }
                   if (clientsSubFilter.mode === 'type') {
@@ -411,9 +474,7 @@ function Contacts({
                 })}
               favouritesOnly={clientsSubFilter.mode === 'fav'}
               onNewClientClick={() => setShowForm(true)}
-              onArchiveClient={handleArchiveClient}
               onRestore={handleRestoreClient}
-              onToggleView={toggleArchivedView}
               showArchived={showArchived}
               onRowClick={(client) => setSelectedClient(client)}
             />
@@ -483,7 +544,7 @@ function Contacts({
           <>
             <ProfessionalsTable
               professionals={professionals
-                .filter((p) => p.archived === showArchived)
+                .filter((p) => p.archived === showArchivedProfessionals)
                 .filter((p) => {
                   if (professionalsSubFilter.mode === 'fav') return p.favourite === true;
                   if (professionalsSubFilter.mode === 'type') return (p.type || '').toLowerCase() === (professionalsSubFilter.value || '').toLowerCase();
@@ -492,8 +553,7 @@ function Contacts({
               }
               onArchiveProfessional={handleArchiveProfessional}
               onRestoreProfessional={handleRestoreProfessional}
-              onToggleView={toggleArchivedProfessionalsView}
-              showArchived={showArchived}
+              showArchived={showArchivedProfessionals}
               onRowClick={(pro) => setSelectedProfessional(pro)}
               onAddProfessional={() => setIsAdding(true)}
             />
@@ -513,6 +573,8 @@ function Contacts({
             properties={properties}
             salesProgressions={salesProgressions}
             clients={clients}
+            onArchiveProfessional={handleArchiveProfessional}
+            onRestoreProfessional={handleRestoreProfessional}
           />
         )}
       </div>

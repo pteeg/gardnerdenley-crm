@@ -6,6 +6,7 @@
   padding: 10px 22px;           /* Larger padding for rounded pill look */
   min-width: 120px;             /* Ensures consistent pill size */
   border-radius: 999px;         /* Fully rounded pill */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   font-size: 1rem;              /* Larger text, matches screenshot */
   font-weight: 600;             /* Bold like your screenshot */
   cursor: pointer;
@@ -58,6 +59,7 @@
   padding: 6px 10px;
   cursor: pointer;
   transition: background 0.2s ease;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   font-size: 0.9rem;
 }
 

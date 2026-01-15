@@ -8,7 +8,6 @@ function ProfessionalsTable({
   professionals, 
   onArchiveProfessional, 
   onRestoreProfessional, 
-  onToggleView, 
   showArchived, 
   onRowClick, 
   onAddProfessional
@@ -39,27 +38,30 @@ function ProfessionalsTable({
               + New Professional
             </button>
           )}
-          <button onClick={onToggleView} className="toggle-btn">
-            {showArchived ? "Show Active" : "Show Archived"}
-          </button>
         </div>
       </div>
 
-      <table className="professionals-table">
-        <thead>
-          <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Company</th>
-            <th>Email</th>
-            <th>Type</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredProfessionals.map((professional, index) => (
-            <tr key={index} onClick={() => onRowClick(professional)} className="clickable-row">
-              <td onClick={(e) => e.stopPropagation()}>
+      <div className="professionals-tiles-container">
+        <div className="professionals-table-header-row">
+          <div className="professional-tile-column-header"></div>
+          <div className="professional-tile-column-header">Name</div>
+          <div className="professional-tile-column-header">Company</div>
+          <div className="professional-tile-column-header">Mobile</div>
+          <div className="professional-tile-column-header">Email</div>
+          <div className="professional-tile-column-header">Type</div>
+        </div>
+        {filteredProfessionals.length === 0 ? (
+          <div className="empty-row">
+            No professionals found
+          </div>
+        ) : (
+          filteredProfessionals.map((professional, index) => (
+            <div 
+              key={index} 
+              onClick={() => onRowClick(professional)} 
+              className="professional-tile clickable-row"
+            >
+              <div className="professional-tile-favourite" onClick={(e) => { e.stopPropagation(); }}>
                 <button
                   aria-label={professional.favourite ? 'Unfavourite' : 'Favourite'}
                   className="icon-button"
@@ -72,40 +74,18 @@ function ProfessionalsTable({
                 >
                   <FontAwesomeIcon icon={professional.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
                 </button>
-              </td>
-              <td>{professional.name}</td>
-              <td>{professional.company}</td>
-              <td>{professional.email}</td>
-              <td>
+              </div>
+              <div className="professional-tile-name">{professional.name}</div>
+              <div className="professional-tile-company">{professional.company || "—"}</div>
+              <div className="professional-tile-mobile">{professional.phoneMobile || professional.phoneNumber || "—"}</div>
+              <div className="professional-tile-email">{professional.email || "—"}</div>
+              <div className="professional-tile-type">
                 <span className="type-pill">{professional.type || '—'}</span>
-              </td>
-              <td>
-                {showArchived ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRestoreProfessional(professional);
-                    }}
-                    className="restore-btn"
-                  >
-                    Restore
-                  </button>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onArchiveProfessional(professional);
-                    }}
-                    className="archive-btn"
-                  >
-                    Archive
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

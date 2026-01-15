@@ -1,0 +1,834 @@
+.overview-page {
+  padding: 2rem 0;
+  min-height: 100vh;
+  height: 100%;
+  background-image: url('../assets/house-background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding-right: calc(100vw - 100%);
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+  left: 0;
+  right: 0;
+}
+
+.overview-inner {
+  max-width: 1400px;
+  margin: 0;
+  padding: 0 2rem 0 2rem;
+}
+
+/* Top tiles row */
+.overview-top-tiles {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.overview-top-tiles .overview-tile {
+  flex: 1;
+  max-height: none;
+}
+
+.overview-main-content {
+  display: block;
+  width: 100%;
+}
+
+.overview-header {
+  margin-bottom: 2rem;
+}
+
+.overview-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.overview-subtitle {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.activity-log-container {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  padding: 1.25rem 0.25rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 4rem);
+  max-height: calc(100vh - 4rem);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Full width for activity log in overview page */
+.overview-main-content .activity-log-container {
+  width: 100%;
+  padding: 1.5rem 1rem 1.5rem 1rem;
+}
+
+/* Right side tiles container */
+.overview-right-tiles {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.overview-tile {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  max-height: calc(60vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  overflow: visible;
+}
+
+.overview-tile:has(.overview-chart-container) {
+  padding: 1rem 0.75rem;
+  padding-bottom: 0;
+  overflow: visible;
+  justify-content: flex-start;
+}
+
+.overview-tile:has(.overview-chart-container) .overview-tile-title {
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+  padding: 0 0.5rem;
+}
+
+.overview-tile:has(.overview-chart-container) .overview-chart-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+}
+
+.overview-tile-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.overview-tile-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #999;
+  font-style: italic;
+}
+
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  flex: 1;
+  display: block;
+  overflow-y: auto;
+  max-height: calc(50vh - 8rem);
+}
+
+.overview-table thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  position: sticky;
+  top: 0;
+  background: transparent;
+  z-index: 10;
+}
+
+.overview-table tbody {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.overview-table th {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  color: #333;
+  border: none;
+  font-size: 0.85rem;
+}
+
+.overview-table td {
+  padding: 0.75rem 0.5rem;
+  border: none;
+  vertical-align: top;
+}
+
+.overview-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.overview-entity-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.overview-entity-link:hover {
+  color: #0056b3;
+}
+
+.overview-chart-container {
+  flex: 0 0 auto;
+  min-height: 220px;
+  max-height: 320px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  overflow: visible;
+  align-self: stretch;
+}
+
+.activity-log-header {
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: transparent;
+  z-index: 10;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  /* no filter row here now – just the title */
+}
+
+.activity-log-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 550;
+  color: #555;
+}
+
+.activity-filters {
+  display: none; /* legacy, no standalone filter row */
+}
+
+.activity-filter-label {
+  font-size: 0.85rem;  /* slightly smaller than main header text */
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.activity-filter-select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  font-size: 0.85rem;
+  background-color: #fff;
+}
+
+.activity-type-header {
+  width: 220px;
+  padding-left: 0;  /* align pill with left edge of table */
+  padding-right: 0;
+}
+
+.activity-filter-select.pill {
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem; /* equal left/right */
+  border: 1px solid rgba(204, 204, 204, 0.8);
+  background-color: rgba(255, 255, 255, 0.9); /* match tile translucency */
+  font-size: 0.85rem;
+  font-weight: inherit;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  /* Remove native dropdown chevron */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  box-sizing: border-box;
+  min-width: 90px;
+  text-align: center; /* ensure text is visually centered in the pill */
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+}
+
+.empty-state-hint {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 0.5rem;
+}
+
+.activity-table-wrapper {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.activity-table th {
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 600;
+  background-color: transparent; /* let the translucent tile show through */
+  color: #333;
+  border: none !important;
+}
+
+.activity-table td {
+  padding: 0.75rem;
+  border: none !important;
+  vertical-align: top;
+}
+
+/* Remove left padding on first column so Type pill aligns with table edge */
+.activity-table th:first-child,
+.activity-table td:first-child {
+  padding-left: 0;
+}
+
+/* But keep a bit of left padding for body cells so text isn't flush */
+.activity-table td:first-child {
+  padding-left: 0.75rem;
+}
+
+/* Remove right border on last column to avoid double edge */
+.activity-table th:last-child,
+.activity-table td:last-child {
+  border-right: none;
+}
+
+.activity-table tbody tr {
+  background-color: #ffffff; /* solid rows for maximum readability */
+}
+
+.activity-empty-filter {
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.activity-details-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-status-cell {
+  color: #007bff;
+  font-weight: 500;
+}
+
+.activity-entity-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #555;
+  background-color: #ffffff;
+  font-size: 0.85rem;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.activity-entity-pill:hover {
+  background-color: #555;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.activity-log-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding-left: 2rem;
+  padding-right: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Activity Timeline Layout */
+.activity-timeline-wrapper {
+  position: relative;
+  padding-left: 3rem;
+  padding-right: 0.5rem;
+  overflow: visible;
+  margin-left: 0rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.activity-tiles-container {
+  padding-left: 0;
+}
+
+.activity-timeline-segment {
+  position: absolute;
+  left: -2.5rem;
+  top: calc(1.25rem + 6px);
+  width: 2px;
+  background: #ddd;
+  transform: translateX(-50%);
+  z-index: 1;
+  /* Extend from circle center down to a consistent distance before next time text
+     The next time text is at 0.1rem from next wrapper top
+     Next wrapper starts 1.5rem down (margin-bottom)
+     We want the line to stop at a consistent small gap before the time text
+     So: extend to (1.5rem + 0.1rem - small gap) = 1.5rem + 0.1rem - 0.05rem = 1.55rem
+     But we need to account for the circle center position (1.25rem + 6px ≈ 1.625rem)
+     Actually, using bottom positioning: bottom = -(distance from wrapper bottom to next time)
+     Next time is at: wrapper bottom + 1.5rem (margin) + 0.1rem (time top)
+     So bottom should be: -(1.5rem + 0.1rem - gap)
+     Let's use a consistent gap of 0.05rem before the time text */
+  bottom: -1.55rem;
+}
+
+/* If extending through a date header, add the extra space consistently:
+   - date group margin-bottom: 2rem
+   - date header space: ~2.5rem (height + margin)
+   Total extra: 4.5rem */
+.activity-timeline-segment[data-extends-through-header="true"] {
+  bottom: -6.05rem;
+}
+
+.activity-date-group {
+  margin-bottom: 1rem;
+}
+
+.activity-date-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+}
+
+.activity-timeline-time {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.1rem;
+  font-size: 0.85rem;
+  color: #333;
+  white-space: nowrap;
+  width: 5rem;
+  text-align: center;
+  line-height: 1.2;
+  transform: translateX(-50%);
+}
+
+.activity-timeline-circle {
+  position: absolute;
+  left: -2.5rem;
+  top: 1.25rem;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #555;
+  border: 2px solid #fff;
+  z-index: 2;
+}
+
+.activity-tile-wrapper {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+
+/* Activity Tiles Layout */
+.activity-tiles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.activity-tile {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1.5px solid #ddd !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
+}
+
+.activity-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.activity-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.25rem;
+  border-bottom: none !important;
+  border: none !important;
+}
+
+.activity-tile-type {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.activity-tile-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.activity-tile-content {
+  margin-bottom: 0.75rem;
+  border: none !important;
+}
+
+.activity-tile-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  border: none !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Remove borders from grid items in Sales Progression tile */
+.overview-tile .activity-tile-row[style*="grid"] > * {
+  border: none !important;
+}
+
+.overview-tile .activity-tile-field {
+  border: none !important;
+}
+
+.activity-tile-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none !important;
+}
+
+.activity-tile-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.activity-tile-details {
+  font-size: 0.9rem;
+  color: #333;
+  margin-top: 0.5rem;
+}
+
+.activity-tile-status {
+  font-size: 0.85rem;
+  color: #007bff;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.activity-tile-actions {
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .overview-page {
+    padding: 1rem;
+  }
+  
+  .activity-tile-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Styles for Clients and Properties tiles in Overview - scoped to overview tiles only */
+.overview-tile .clients-tiles-container {
+  --grid-cols: 50px 2fr 1.2fr 1.2fr 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.overview-tile .clients-tiles-container.overview-tiles-scrollable {
+  height: calc(6 * (40px + 0.75rem * 2 + 0.5rem) + 36px);
+  max-height: calc(6 * (40px + 0.75rem * 2 + 0.5rem) + 36px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.overview-tile .clients-table-header-row {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  padding: 0.75rem;
+  background-color: transparent;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  font-family: sans-serif;
+  color: #333;
+  gap: 0;
+}
+
+.overview-tile .client-tile-column-header {
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.overview-tile .client-tile {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  transition: box-shadow 0.2s ease;
+  cursor: pointer;
+  gap: 0;
+  min-height: 40px;
+}
+
+.overview-tile .client-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.overview-tile .client-tile-favourite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overview-tile .client-tile-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-tile .client-tile-status {
+  display: flex;
+  align-items: center;
+}
+
+.overview-tile .client-tile-budget,
+.overview-tile .client-tile-phone {
+  font-size: 0.95rem;
+  color: #333;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-tile .client-tile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.overview-tile .properties-tiles-container {
+  --grid-cols: 50px 1.5fr 1.2fr 1fr 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.overview-tile .properties-tiles-container.overview-tiles-scrollable {
+  height: calc(6 * (40px + 0.75rem * 2 + 0.5rem) + 36px);
+  max-height: calc(6 * (40px + 0.75rem * 2 + 0.5rem) + 36px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.overview-tile .properties-table-header-row {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  padding: 0.75rem;
+  background-color: transparent;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  font-family: sans-serif;
+  color: #333;
+  gap: 0;
+}
+
+.overview-tile .property-tile-column-header {
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.overview-tile .property-tile {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  transition: box-shadow 0.2s ease;
+  cursor: pointer;
+  gap: 0;
+  min-height: 40px;
+}
+
+.overview-tile .property-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.overview-tile .property-tile-favourite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overview-tile .property-tile-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-tile .property-tile-price,
+.overview-tile .property-tile-status {
+  font-size: 0.95rem;
+  color: #333;
+  font-family: sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-tile .property-tile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.overview-tile .empty-row {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+  font-style: italic;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Status badge styles - matching ClientsTable but smaller */
+.overview-tile .status-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 300;
+  font-size: 0.82rem;
+  font-family: sans-serif;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+.overview-tile .status-badge.searching {
+  background-color: rgba(241, 196, 15, 0.2);
+  border: 1.5px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.overview-tile .status-badge.awaiting-vendor-response {
+  background-color: rgba(0, 123, 255, 0.2);
+  border: 1.5px solid #007bff;
+  color: #007bff;
+}
+
+.overview-tile .status-badge.matched {
+  background-color: rgba(0, 123, 255, 0.18);
+  border: 1.5px solid #007bff;
+  color: #007bff;
+}
+
+.overview-tile .status-badge.complete {
+  background-color: rgba(108, 117, 125, 0.2);
+  border: 1.5px solid #6c757d;
+  color: #6c757d;
+}
+
+.overview-tile .status-badge.under-offer {
+  background-color: rgba(255, 140, 0, 0.3);
+  border: 1.5px solid #ff8c00;
+  color: #ff8c00;
+}
+
+.overview-tile .status-badge.exchanged {
+  background-color: rgba(40, 167, 69, 0.2);
+  border: 1.5px solid #28a745;
+  color: #28a745;
+}
+
+.overview-tile .status-badge.completed {
+  background-color: rgba(108, 117, 125, 0.2);
+  border: 1.5px solid #6c757d;
+  color: #6c757d;
+}
+

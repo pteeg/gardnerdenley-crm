@@ -43,7 +43,12 @@
 
 .properties-content {
   flex: 1;
-  padding: 18px 10px 20px 20px;
+  padding: 18px 20px 20px 20px; /* symmetric left/right padding; background is still white to scrollbar */
+  transition: max-width 0.3s ease;
+}
+
+.properties-container .gd-sidebar.collapsed ~ .properties-content {
+  max-width: calc(100vw - 60px); /* Adjusted for collapsed sidebar (60px width) */
 }
 
 .properties-header {
@@ -87,96 +92,136 @@
   width: 240px;
 }
 
-.properties-table {
+/* Shared grid definition for alignment */
+.properties-tiles-container {
+  --grid-cols: 50px 1.5fr 2fr 1.2fr 1fr 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
 }
 
-.properties-table th,
-.properties-table td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+/* Table header row */
+.properties-table-header-row {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  padding: 0.75rem;
+  background-color: transparent;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  font-family: sans-serif;
+  color: #333;
+  gap: 0;
+}
+
+.property-tile-column-header {
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+/* Individual property tile - full width horizontal row */
+.property-tile {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  align-items: center;
+  padding: 0.75rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  transition: box-shadow 0.2s ease;
   cursor: pointer;
+  gap: 0;
 }
 
-.properties-table th:nth-child(1),
-.properties-table td:nth-child(1) {
-  width: 20%; /* Name */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.property-tile:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.properties-table th:nth-child(2),
-.properties-table td:nth-child(2) {
-  width: 25%; /* Brief */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.property-tile-favourite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.properties-table th:nth-child(3),
-.properties-table td:nth-child(3) {
-  width: 20%; /* Guide Price */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.properties-table th:nth-child(4),
-.properties-table td:nth-child(4) {
-  width: 15%; /* Status */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.properties-table th:nth-child(5),
-.properties-table td:nth-child(5) {
-  width: 20%; /* Actions */
-  text-align: right;
-  padding-left: 0;
-  padding-right: 1.5rem;
-  overflow: visible; /* Allow buttons to be fully visible */
-}
-
-
-.properties-table tr:hover {
-  background-color: #f5f5f5;
-}
-
-.archive-button,
-.unarchive-button {
-  padding: 0.3rem 0.75rem;
-  font-size: 0.95rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.property-tile-name {
   font-weight: 500;
-  white-space: nowrap;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: sans-serif;
 }
 
-.archive-button {
+.property-tile-description,
+.property-tile-price,
+.property-tile-status {
+  font-size: 0.9rem;
+  color: #333;
+  font-family: sans-serif;
+}
+
+.property-tile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.empty-row {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+  font-style: italic;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.archive-btn {
   background-color: #ffffff !important;
   color: #555555 !important;
+  padding: 0.3rem 0.75rem;
   border: 1px solid #555555 !important;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  font-size: 0.875rem;
 }
 
-.archive-button:hover {
+.archive-btn:hover {
   background-color: #555555 !important;
   color: #ffffff !important;
   border-color: #555555 !important;
 }
 
-.unarchive-button {
-  background-color: #5bc0de;
+.restore-btn {
+  background-color: #27ae60;
   color: white;
+  padding: 0.3rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
 }
 
-.unarchive-button:hover {
-  background-color: #31b0d5;
+.restore-btn:hover {
+  background-color: #229954;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .properties-tiles-container {
+    --grid-cols: 40px 1fr 1fr;
+  }
+  
+  .properties-table-header-row .property-tile-column-header:nth-child(n+4),
+  .property-tile .property-tile-description,
+  .property-tile .property-tile-price,
+  .property-tile .property-tile-status {
+    display: none;
+  }
 }
 
 .action-buttons {

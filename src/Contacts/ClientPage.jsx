@@ -3,12 +3,11 @@ import "./ClientPage.css";
 import AddClientForm from "./AddClientForm";
 import PropertySelectionModal from "../Properties/PropertySelectionModal";
 import NewPropertyModal from "../Properties/NewPropertyModal";
-
-// Helper function to format currency nicely (e.g. £1,000)
-function formatCurrencyInput(value) {
-  const numericValue = value.replace(/[^\d]/g, ""); // remove non-digits
-  return numericValue ? "£" + Number(numericValue).toLocaleString("en-UK") : "";
-}
+import { logActivity } from "../lib/activityLogApi";
+import EntityActivityLog from "../EntityActivityLog";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPhone, faAt, faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
 
 function ClientPage({
   client,
@@ -47,9 +46,6 @@ function ClientPage({
     return c.name || "";
   };
 
-  const [showOfferModal, setShowOfferModal] = useState(false);
-  const [selectedPropertyName, setSelectedPropertyName] = useState(null);
-  const [offerAmount, setOfferAmount] = useState("");
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNewPropertyModal, setShowNewPropertyModal] = useState(false);
@@ -64,18 +60,67 @@ function ClientPage({
   const [showFallThroughModal, setShowFallThroughModal] = useState(false);
   const [fallThroughReason, setFallThroughReason] = useState("");
   const [pendingUnlinkProperty, setPendingUnlinkProperty] = useState(null);
+  const [showBriefModal, setShowBriefModal] = useState(false);
+  const [showProspectivePropertiesModal, setShowProspectivePropertiesModal] = useState(false);
+  const [showSearchDetailsModal, setShowSearchDetailsModal] = useState(false);
+  const [showMoreInfoModal, setShowMoreInfoModal] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
+  const [activeTab, setActiveTab] = useState("prospectiveProperties");
 
   const [editedClient, setEditedClient] = useState(client);
   const [originalName, setOriginalName] = useState(client?.name || "");
+
+  // Sync editedClient when client prop changes
+  useEffect(() => {
+    setEditedClient(client);
+  }, [client]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showOptionsDropdown && !event.target.closest('.options-dropdown-container')) {
+        setShowOptionsDropdown(false);
+      }
+    };
+
+    if (showOptionsDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showOptionsDropdown]);
 
   const linkedProperties = allProperties.filter(property => 
     (property.linkedClients && property.linkedClients.includes(client.name)) ||
     property.linkedClient === client.name
   );
 
+  const formatPrimaryDisplayName = () => {
+    const namePart = [client.spouse1FirstName, client.spouse1Surname].filter(Boolean).join(" ");
+    const titled = [client.spouse1Title, namePart].filter(Boolean).join(" ");
+    return titled || client.name || "Primary client";
+  };
+
+  const buildPhoneTooltip = () => {
+    const primaryName = formatPrimaryDisplayName();
+    const primaryPhone = client.phoneNumber || "No phone";
+    return `${primaryName}: ${primaryPhone}`;
+  };
+
+  const buildEmailTooltip = () => {
+    const primaryName = formatPrimaryDisplayName();
+    const primaryEmail = client.email || "No email";
+    return `${primaryName}: ${primaryEmail}`;
+  };
+
+  const [showPhoneTooltip, setShowPhoneTooltip] = useState(false);
+  const [showEmailTooltip, setShowEmailTooltip] = useState(false);
+
   const handleArchiveClient = () => {
     if (window.confirm('Are you sure you want to archive this client?')) {
-      onArchiveClient(client.id);
+      onArchiveClient(client);
     }
   };
 
@@ -127,6 +172,17 @@ function ClientPage({
           }
         } catch (e) { console.warn('Progression sync on fall-through failed (non-fatal):', e); }
         await updateClientStatus(client.name, 'Searching');
+        
+        // Log activity for fallen through deal (will appear in both client and property logs)
+        await logActivity({
+          type: "fallenThrough",
+          entityType: "property",
+          entityName: propertyName,
+          clientName: client.name,
+          propertyName: propertyName,
+          details: reason || "",
+          status: null
+        });
       }
     } catch (e) {
       console.error('Error handling fallen through:', e);
@@ -231,359 +287,374 @@ function ClientPage({
   return (
     <div className="client-page">
       {/* Header Section */}
-      <div className="client-header">
-        <div className="client-title-section">
-          <button className="back-btn" onClick={onBack} type="button" style={{ marginBottom: '8px' }}>
+      <div className="client-header" style={{ position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+          <button className="back-btn" onClick={onBack} type="button">
             <i className="fa-solid fa-arrow-left" style={{ color: '#555555', fontSize: '1.4rem' }} />
           </button>
-          <h1 className="client-title">{formatClientNameFromClient(client)}</h1>
-            <div className="client-status">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              {/* Type first */}
-              {Array.isArray(client.types) && client.types.length > 0 && (
-                <>
-                  <span className="budget-label">Type:</span>
-                  {client.types.map((t, idx) => (
-                    <span key={idx} className="status-badge" style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}>
-                      {t}
-                    </span>
-                  ))}
-                </>
-              )}
-              {/* Status next */}
-              <span className="budget-label" style={{ marginLeft: '12px' }}>Status:</span>
-              <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-') }`}>
-                {client.status || "Active"}
-              </span>
-            </div>
-            <div className="client-budget">
-              <span className="budget-label">Budget: </span>
-              <span className="budget-value">{client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not specified"}</span>
-            </div>
-            <div className="client-budget" style={{ marginTop: '6px' }}>
-              <span className="budget-label">Current Address: </span>
-              <span className="budget-value">{client.currentAddress || "Not provided"}</span>
-            </div>
-          </div>
-        </div>
-        
-          <div className="header-actions">
-            <div className="action-buttons">
-              <button className="edit-button" onClick={() => {
-                setEditedClient(client);
-                setOriginalName(client.name);
-                setShowEditModal(true);
-              }}>
-                Edit
-              </button>
-            </div>
-          </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="client-content">
-        {/* Left Column */}
-        <div className="client-main">
-          {/* Contact Details Card */}
-          <div className="client-card">
-            <h2 className="card-title">Contact Details</h2>
-            <div className="contact-info">
-              <div className="contact-item">
-              <span className="contact-label">Primary Client</span>
-              <span className="contact-value">{
-                (() => {
-                  const namePart = [client.spouse1FirstName, client.spouse1Surname].filter(Boolean).join(" ");
-                  const titled = [client.spouse1Title, namePart].filter(Boolean).join(" ");
-                  return titled || "Not provided";
-                })()
-              }</span>
-              </div>
-            {client.spouse2FirstName || client.spouse2Surname ? (
-                <div className="contact-item">
-                <span className="contact-label">Spouse</span>
-                <span className="contact-value">{
-                  [client.spouse2Title, [client.spouse2FirstName, client.spouse2Surname].filter(Boolean).join(" ")]
-                    .filter(Boolean)
-                    .join(" ")
-                }</span>
+          {/* Wrapper to keep name tile and tabs tile on the same row */}
+          <div className="client-tiles-container" style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flex: 1, flexWrap: "nowrap", width: "100%" }}>
+            {/* Left tile - Name and info */}
+            <div className="client-header-tile client-name-tile">
+              <div className="client-title-section">
+                <h1 className="client-title">
+                  {formatClientNameFromClient(client)}
+                </h1>
+                <div className="client-current-address">
+                  {client.currentAddress || "No current address provided"}
                 </div>
-              ) : null}
-              <div className="contact-item">
-                <span className="contact-label">Phone</span>
-                <span className="contact-value">{client.phoneNumber || "Not provided"}</span>
-              </div>
-              <div className="contact-item">
-                <span className="contact-label">Email</span>
-                <span className="contact-value">{client.email || "Not provided"}</span>
-              </div>
-              <div className="contact-item">
-                <span className="contact-label">Company</span>
-                <span className="contact-value">{client.company || "Not provided"}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Search Details Card */}
-          <div className="client-card">
-            <h2 className="card-title">Search Details</h2>
-            <div className="search-info">
-              <div className="search-item">
-                <span className="search-label">Search Start Date</span>
-                <span className="search-value">{client.searchStartDate || "Not specified"}</span>
-              </div>
-              <div className="search-item">
-                <span className="search-label">Lead Source</span>
-                <span className="search-value">{client.clientSource || "Not provided"}</span>
-                {client.clientSource === "Referral" && (
-                  <div className="referral-detail">
-                    {client.referralContact ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const name = client.referralContact;
-                          const event = new CustomEvent('openClientByName', { detail: { name } });
-                          window.dispatchEvent(event);
-                        }}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
-                          borderRadius: 16, padding: '4px 10px', cursor: 'pointer'
-                        }}
-                      >
-                        {client.referralContact}
-                      </button>
-                    ) : (
-                      <span className="referral-value">(not contact listed)</span>
+                <div className="client-status">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {/* Type first */}
+                    {Array.isArray(client.types) && client.types.length > 0 && (
+                      <>
+                        {client.types.map((t, idx) => (
+                          <span
+                            key={idx}
+                            className="status-badge"
+                            style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </>
                     )}
-                  </div>
-                )}
-              </div>
-              <div className="search-item">
-                <span className="search-label">Position</span>
-                <span className="search-value">{client.positionFunding || "Not specified"}</span>
-              </div>
-              <div className="search-item">
-                <span className="search-label">Disposal</span>
-                <span className="search-value">{client.disposal || "Not specified"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="client-sidebar">
-          {/* Brief Card */}
-          <div className="client-card">
-            <h2 className="card-title">Brief</h2>
-            <div className="brief-info">
-              <div className="brief-item">
-                <span className="brief-label">Brief</span>
-                <span className="brief-value">{client.brief || "No brief provided"}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes Card */}
-          <div className="client-card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 className="card-title" style={{ margin: 0 }}>Notes</h2>
-              <button
-                className="offer-btn"
-                style={{ background: "#555", borderColor: "#555" }}
-                onClick={() => setShowNoteModal(true)}
-              >
-                + New Note
-              </button>
-            </div>
-            <div className="notes-list" style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {(client.notes || []).length === 0 ? (
-                <span style={{ color: "#666", fontStyle: "italic" }}>No notes yet</span>
-              ) : (
-                (client.notes || []).map((n, idx) => (
-                  <div key={idx} className="note-row">
-                    <span className="note-text">
-                      {new Date(n.date).toLocaleDateString()}: {n.text}
-                    </span>
-                    <div className="note-actions">
-                      <button
-                        className="icon-button"
-                        title="Edit note"
-                        onClick={() => {
-                          setNoteText(n.text || "");
-                          setEditingNoteIndex(idx);
-                          setShowNoteModal(true);
-                        }}
-                      >
-                        <i className="fa-solid fa-pen" style={{ color: '#555555' }} /> 
-                      </button>
-                      <button
-                        className="icon-button danger"
-                        title="Delete note"
-                        onClick={async () => {
-                          if (!window.confirm("Delete this note?")) return;
-                          const notes = (client.notes || []).filter((_, i) => i !== idx);
-                          // Optimistically update local view
-                          client.notes = notes;
-                          await updateClientInfo(client.name, { notes });
-                        }}
-                      >
-                        <i className="fa-solid fa-trash" style={{ color: '#ff0000' }} />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Prospective Properties Card */}
-          <div className="client-card">
-            <h2 className="card-title">Prospective Properties</h2>
-            <button onClick={() => setShowPropertyModal(true)} className="add-property-btn">
-              + Add Prospective Property
-            </button>
-
-            <div className="property-cards">
-              {linkedProperties.map((property) => {
-                const isPropertyCompleted = Array.isArray(salesProgressions) && salesProgressions.some(sp => sp && sp.client === client.name && sp.address === property.name && sp.invoicePaid === 'Done' && !sp.fallenThrough);
-                return (
-                  <div key={property.name} className="prospective-property-card">
-                    <div className="property-main-info">
-                      <h4>{property.name}</h4>
-                      <p className="property-price">
-                        Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : "No price"}
-                      </p>
-                      {Array.isArray(property.offers) && property.offers.length > 0 ? (
-                        <div className="offer-history">
-                          {property.offers.map((o, idx) => (
-                            <p key={idx} className="property-price">
-                              {o && o.amount !== undefined && o.amount !== null && o.amount !== ""
-                                ? `Offer Logged ${new Date(o.date).toLocaleDateString()}: £${Number(o.amount).toLocaleString()} ${o.status ? `(${o.status})` : ''}`
-                                : `${new Date(o.date).toLocaleDateString()}: ${o?.status || 'Event'}`}
-                            </p>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="property-actions">
-                      {property.offerStatus && property.offerStatus !== "None" ? (
-                        <div className="offer-status">
-                          <span className="offer-label">Offer: {property.offerStatus}{isPropertyCompleted ? ' • Completed' : ''}</span>
-                          {property.offerStatus === "Pending" && (
-                            <div className="offer-status-buttons">
-                              <button
-                                className="accept-btn"
-                                onClick={() => {
-                                  handleAcceptOffer(client.name, property.name);
-                                  updatePropertyOffer(property.name, {
-                                    offerAmount: property.offerAmount,
-                                    offerStatus: "Accepted",
-                                    setLastOfferStatus: "Accepted"
-                                  });
-                                  updateClientStatus(client.name, "Matched");
-                                }}
-                              >
-                                Accept
-                              </button>
-                              <button
-                                className="decline-btn clearly in"
-                                onClick={() => {
-                                  // Decline last pending offer and return to Log Offer state
-                                  updatePropertyOffer(property.name, {
-                                    offerAmount: null,
-                                    offerStatus: "None",
-                                    setLastOfferStatus: "Declined"
-                                  });
-                                  updateClientStatus(client.name, "Searching");
-                                }}
-                              >
-                                Decline
-                              </button>
-                            </div>
-                          )}
-                          {property.offerStatus === "Accepted" && !isPropertyCompleted && (
-                            <button
-                              className="remove-btn"
-                              onClick={() => {
-                                setPendingUnlinkProperty(property.name);
-                                setFallThroughReason('');
-                                setShowFallThroughModal(true);
-                              }}
-                            >
-                              Fallen Through
-                            </button>
-                          )}
-                          {property.offerStatus === "Fallen Through" && (
-                            <button
-                              className="offer-btn"
-                              onClick={() => handleRevive(property.name)}
-                            >
-                              Revive
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="offer-actions">
-                          <button
-                            className="offer-btn"
-                            onClick={() => {
-                              setSelectedPropertyName(property.name);
-                              setShowOfferModal(true);
+                    {/* Call / Email buttons */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <div style={{ position: "relative" }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (client.phoneNumber) {
+                              window.location.href = `tel:${client.phoneNumber}`;
+                            }
+                          }}
+                          onMouseEnter={() => setShowPhoneTooltip(true)}
+                          onMouseLeave={() => setShowPhoneTooltip(false)}
+                          style={{
+                            background: "#f3f4f6",
+                            border: "none",
+                            cursor: client.phoneNumber ? "pointer" : "default",
+                            padding: 0,
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#555555"
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faPhone} style={{ fontSize: "1.2rem" }} />
+                        </button>
+                        {showPhoneTooltip && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "115%",
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              background: "#333",
+                              color: "#fff",
+                              padding: "0.35rem 0.5rem",
+                              borderRadius: "4px",
+                              fontSize: "0.8rem",
+                              whiteSpace: "nowrap",
+                              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                              zIndex: 10
                             }}
                           >
-                            Log Offer
-                          </button>
-                          <button
-                            className="remove-btn"
-                            onClick={() => handleUnlinkProperty(property.name)}
+                            {buildPhoneTooltip()}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ position: "relative" }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (client.email) {
+                              window.location.href = `mailto:${client.email}`;
+                            }
+                          }}
+                          onMouseEnter={() => setShowEmailTooltip(true)}
+                          onMouseLeave={() => setShowEmailTooltip(false)}
+                          style={{
+                            background: "#f3f4f6",
+                            border: "none",
+                            cursor: client.email ? "pointer" : "default",
+                            padding: 0,
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#555555"
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faAt} style={{ fontSize: "1.2rem" }} />
+                        </button>
+                        {showEmailTooltip && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "115%",
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              background: "#333",
+                              color: "#fff",
+                              padding: "0.35rem 0.5rem",
+                              borderRadius: "4px",
+                              fontSize: "0.8rem",
+                              whiteSpace: "nowrap",
+                              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                              zIndex: 10
+                            }}
                           >
-                            Remove
+                            {buildEmailTooltip()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Status last */}
+                    <span className="budget-label" style={{ marginLeft: '6px' }}>Status:</span>
+                    <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-') }`}>
+                      {client.status || "Active"}
+                    </span>
+                  </div>
+                  {/* Budget under type / status / buttons */}
+                  <div style={{ marginTop: '0.4rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Budget: </span>
+                    <span style={{ fontWeight: 600 }}>
+                      {client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not specified"}
+                    </span>
+                  </div>
+                  {/* Position and Disposal */}
+                  <div style={{ marginTop: '0.4rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Position: </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {client.positionFunding || "Not specified"}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '0.4rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Disposal: </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {client.disposal || "Not specified"}
+                    </span>
+                  </div>
+                  {/* Options and Heart buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                    <div className="options-dropdown-container" style={{ position: 'relative' }}>
+                      <button 
+                        className="edit-button" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowOptionsDropdown(!showOptionsDropdown);
+                        }}
+                      >
+                        Options
+                      </button>
+                      {showOptionsDropdown && (
+                        <div className="options-dropdown">
+                          <button
+                            className="dropdown-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditedClient(client);
+                              setOriginalName(client.name);
+                              setShowEditModal(true);
+                              setShowOptionsDropdown(false);
+                            }}
+                          >
+                            Edit
                           </button>
+                          {client.status === "Archived" && updateClientStatus ? (
+                            <button
+                              className="dropdown-item"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await updateClientStatus(client.name, "Searching");
+                                setShowOptionsDropdown(false);
+                              }}
+                            >
+                              Unarchive
+                            </button>
+                          ) : (
+                            onArchiveClient && (
+                              <button
+                                className="dropdown-item"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchiveClient();
+                                  setShowOptionsDropdown(false);
+                                }}
+                              >
+                                Archive
+                              </button>
+                            )
+                          )}
                         </div>
                       )}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Associated Contacts */}
-          <div className="client-card">
-            <h2 className="card-title">Link Associated Contact Record</h2>
-            <button
-              onClick={() => { setShowAssociateModal(true); setAssociateSearch(""); setSelectedAssociate(null); setAssociateRelation(""); }}
-              className="add-property-btn"
-            >
-              + Add Link
-            </button>
-
-            <div className="property-cards">
-              {(client.associatedContacts || []).map((ac, idx) => (
-                <div key={idx} className="prospective-property-card">
-                  <div className="property-main-info">
-                    <h4>{formatListName(ac.client)}</h4>
-                    {ac.relation ? (
-                      <p className="property-price">{ac.relation}</p>
-                    ) : null}
-                  </div>
-                  <div className="property-actions">
                     <button
-                      className="remove-btn"
-                      onClick={async () => {
-                        const list = Array.isArray(client.associatedContacts) ? client.associatedContacts.filter((_, i) => i !== idx) : [];
-                        await updateClientInfo(client.name, { associatedContacts: list });
+                      aria-label={client.favourite ? 'Unfavourite' : 'Favourite'}
+                      className="icon-button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (updateClientInfo && client.name) {
+                          await updateClientInfo(client.name, { favourite: !client.favourite });
+                        } else if (client.id) {
+                          const { updateClientById } = await import('../lib/clientsApi');
+                          await updateClientById(client.id, { favourite: !client.favourite });
+                        }
                       }}
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      Remove
+                      <FontAwesomeIcon icon={client.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '22px', height: '22px' }} />
                     </button>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+            {/* Right tile - Tabs and content */}
+            <div className="client-header-tile client-tabs-tile" style={{ flex: 1 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", overflow: "hidden" }}>
+                {/* Tab buttons */}
+                <div className="client-tabs">
+                  <button
+                    type="button"
+                    className={`client-tab-button ${activeTab === "brief" ? "active" : ""}`}
+                    onClick={() => setActiveTab("brief")}
+                  >
+                    Brief
+                  </button>
+                  <button
+                    type="button"
+                    className={`client-tab-button ${activeTab === "prospectiveProperties" ? "active" : ""}`}
+                    onClick={() => setActiveTab("prospectiveProperties")}
+                  >
+                    Prospective Properties
+                  </button>
+                  <button
+                    type="button"
+                    className={`client-tab-button ${activeTab === "documents" ? "active" : ""}`}
+                    onClick={() => setActiveTab("documents")}
+                  >
+                    Documents
+                  </button>
+                  <button
+                    type="button"
+                    className={`client-tab-button ${activeTab === "searchDetails" ? "active" : ""}`}
+                    onClick={() => setActiveTab("searchDetails")}
+                  >
+                    More Info
+                  </button>
+                </div>
+                {/* Tab content */}
+                <div className="client-tab-content">
+                  {activeTab === "prospectiveProperties" && (
+                    <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                      <div className="property-cards" style={{ flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
+                        {linkedProperties.length === 0 ? (
+                          <p style={{ color: "#666", fontStyle: "italic" }}>No prospective properties</p>
+                        ) : (
+                          linkedProperties.map((property) => (
+                            <div key={property.name} className="prospective-property-card">
+                              <div 
+                                className="property-main-info"
+                                style={{ cursor: "pointer", flex: 1 }}
+                                onClick={() => {
+                                  window.dispatchEvent(
+                                    new CustomEvent("openPropertyByName", {
+                                      detail: { name: property.name },
+                                    })
+                                  );
+                                }}
+                              >
+                                <h4>{property.name}</h4>
+                                <p className="property-price">
+                                  Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : "No price"}
+                                </p>
+                              </div>
+                              <div className="property-actions">
+                                <button
+                                  className="remove-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUnlinkProperty(property.name);
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div style={{ flexShrink: 0 }}>
+                        <button onClick={() => setShowPropertyModal(true)} className="add-property-btn">
+                          + Add Prospective Property
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === "documents" && (
+                    <div>
+                      <p style={{ color: "#666", fontStyle: "italic" }}>Documents feature coming soon</p>
+                    </div>
+                  )}
+                  {activeTab === "brief" && (
+                    <div>
+                      <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#333' }}>{client.brief || "No brief provided"}</p>
+                    </div>
+                  )}
+                  {activeTab === "searchDetails" && (
+                    <div>
+                      <div className="search-info">
+                        <div className="search-item">
+                          <span className="search-label">Search Start Date</span>
+                          <span className="search-value">{client.searchStartDate || "Not specified"}</span>
+                        </div>
+                        <div className="search-item">
+                          <span className="search-label">Lead Source</span>
+                          <span className="search-value">
+                            {client.clientSource === "Referral" 
+                              ? `Referral: ${client.referralContact || "(no contact added)"}`
+                              : (client.clientSource || "Not provided")
+                            }
+                          </span>
+                          {client.clientSource === "Referral" && client.referralContact && (
+                            <div className="referral-detail">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const name = client.referralContact;
+                                  const event = new CustomEvent('openClientByName', { detail: { name } });
+                                  window.dispatchEvent(event);
+                                }}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                                  background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
+                                  borderRadius: 16, padding: '4px 10px', cursor: 'pointer', marginTop: '0.5rem'
+                                }}
+                              >
+                                {client.referralContact}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Edit Modal */}
       {showEditModal && (
@@ -602,55 +673,6 @@ function ClientPage({
           allClients={allClients}
           professionals={professionals}
         />
-      )}
-
-      {/* Offer Modal */}
-      {showOfferModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Log Offer</h3>
-            <div className="form-group">
-              <label>Offer Amount:</label>
-              <input
-                type="text"
-                placeholder="Enter offer amount"
-                value={formatCurrencyInput(offerAmount)}
-                onChange={(e) => {
-                  const digitsOnly = e.target.value.replace(/[^0-9]/g, "");
-                  setOfferAmount(digitsOnly);
-                }}
-              />
-            </div>
-            <div className="modal-buttons">
-              <button onClick={() => {
-                if (offerAmount && selectedPropertyName) {
-                  updatePropertyOffer(selectedPropertyName, {
-                    offerAmount: Number(offerAmount),
-                    offerStatus: "Pending",
-                    appendOffer: {
-                      date: new Date().toISOString(),
-                      amount: Number(offerAmount),
-                      status: "Pending"
-                    }
-                  });
-                  updateClientStatus(client.name, "Under Offer");
-                  setShowOfferModal(false);
-                  setOfferAmount("");
-                  setSelectedPropertyName(null);
-                }
-              }}>
-                Save Offer
-              </button>
-              <button onClick={() => {
-                setShowOfferModal(false);
-                setOfferAmount("");
-                setSelectedPropertyName(null);
-              }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Note Modal */}
@@ -683,6 +705,13 @@ function ClientPage({
                     const newNote = { date: new Date().toISOString(), text };
                     const notes = Array.isArray(client.notes) ? [...client.notes, newNote] : [newNote];
                     await updateClientInfo(client.name, { notes });
+                    // Log the activity
+                    await logActivity({
+                      type: "note",
+                      entityType: "client",
+                      entityName: client.name,
+                      details: text,
+                    });
                   }
                   setNoteText("");
                   setEditingNoteIndex(null);
@@ -763,6 +792,42 @@ function ClientPage({
         </div>
       )}
 
+      {/* Main Content Area */}
+      <div style={{ padding: "0.1rem 1.5rem 1.25rem 1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1.25rem", paddingLeft: "calc(56px + 0.75rem)" }}>
+          {/* Left Column - Activity Log (full width) */}
+          <div style={{ overflow: "hidden", boxSizing: "border-box" }}>
+            <EntityActivityLog
+              entityType="client"
+              entityName={client.name}
+              title="Recent Activity"
+              clients={allClients}
+              properties={allProperties}
+              onAcceptOffer={handleAcceptOffer}
+              onUpdateClientStatus={updateClientStatus}
+              onUpdatePropertyOffer={updatePropertyOffer}
+              onCreateSalesProgression={handleAcceptOffer}
+              onRemoveSalesProgression={removeSalesProgressionRow}
+              onNoteClick={() => setShowNoteModal(true)}
+              onLogOfferClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("logOfferForClient", {
+                    detail: { clientName: client.name },
+                  })
+                );
+              }}
+              onPhoneCallNoteClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("logNoteForClient", {
+                    detail: { clientName: client.name, isPhoneCall: true },
+                  })
+                );
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Property Selection Modal */}
       {showPropertyModal && (
         <PropertySelectionModal
@@ -810,6 +875,145 @@ function ClientPage({
                 setShowFallThroughModal(false);
                 setPendingUnlinkProperty(null);
               }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Brief Modal */}
+      {showBriefModal && (
+        <div className="modal-overlay" onClick={() => setShowBriefModal(false)}>
+          <div className="modal-content" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
+            <h3>Brief</h3>
+            <div style={{ marginTop: '1rem' }}>
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{client.brief || "No brief provided"}</p>
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowBriefModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prospective Properties Modal */}
+      {showProspectivePropertiesModal && (
+        <div className="modal-overlay" onClick={() => setShowProspectivePropertiesModal(false)}>
+          <div className="modal-content" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <h3>Prospective Properties</h3>
+              <button onClick={() => setShowPropertyModal(true)} className="add-property-btn">
+                + Add Prospective Property
+              </button>
+            </div>
+            <div className="property-cards" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {linkedProperties.length === 0 ? (
+                <p style={{ color: "#666", fontStyle: "italic" }}>No prospective properties</p>
+              ) : (
+                linkedProperties.map((property) => (
+                  <div key={property.name} className="prospective-property-card">
+                    <div 
+                      className="property-main-info"
+                      style={{ cursor: "pointer", flex: 1 }}
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new CustomEvent("openPropertyByName", {
+                            detail: { name: property.name },
+                          })
+                        );
+                        setShowProspectivePropertiesModal(false);
+                      }}
+                    >
+                      <h4>{property.name}</h4>
+                      <p className="property-price">
+                        Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : "No price"}
+                      </p>
+                    </div>
+                    <div className="property-actions">
+                      <button
+                        className="remove-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnlinkProperty(property.name);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowProspectivePropertiesModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Details Modal */}
+      {showSearchDetailsModal && (
+        <div className="modal-overlay" onClick={() => setShowSearchDetailsModal(false)}>
+          <div className="modal-content" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
+            <h3>Search Details</h3>
+            <div className="search-info" style={{ marginTop: '1rem' }}>
+              <div className="search-item">
+                <span className="search-label">Search Start Date</span>
+                <span className="search-value">{client.searchStartDate || "Not specified"}</span>
+              </div>
+              <div className="search-item">
+                <span className="search-label">Lead Source</span>
+                <span className="search-value">{client.clientSource || "Not provided"}</span>
+                {client.clientSource === "Referral" && (
+                  <div className="referral-detail">
+                    {client.referralContact ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = client.referralContact;
+                          const event = new CustomEvent('openClientByName', { detail: { name } });
+                          window.dispatchEvent(event);
+                          setShowSearchDetailsModal(false);
+                        }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
+                          borderRadius: 16, padding: '4px 10px', cursor: 'pointer', marginTop: '0.5rem'
+                        }}
+                      >
+                        {client.referralContact}
+                      </button>
+                    ) : (
+                      <span className="referral-value">(not contact listed)</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="search-item">
+                <span className="search-label">Position</span>
+                <span className="search-value">{client.positionFunding || "Not specified"}</span>
+              </div>
+              <div className="search-item">
+                <span className="search-label">Disposal</span>
+                <span className="search-value">{client.disposal || "Not specified"}</span>
+              </div>
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowSearchDetailsModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Documents Modal */}
+      {showDocumentsModal && (
+        <div className="modal-overlay" onClick={() => setShowDocumentsModal(false)}>
+          <div className="modal-content" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
+            <h3>Documents</h3>
+            <div style={{ marginTop: '1rem' }}>
+              <p style={{ color: "#666", fontStyle: "italic" }}>Documents feature coming soon</p>
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowDocumentsModal(false)}>Close</button>
             </div>
           </div>
         </div>

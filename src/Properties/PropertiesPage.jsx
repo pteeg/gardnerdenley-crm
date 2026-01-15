@@ -7,10 +7,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
 import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 
-const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onRestoreProperty, onToggleView, showArchived }) => {
+const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onRestoreProperty, onToggleView, showArchived, openPropertyName, onConsumeOpenProperty, clients = [], allProperties = [], updateClientStatus, createNewSalesProgression, removeSalesProgressionRow }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Sync selectedProperty with properties array when it updates (especially for comparables)
   useEffect(() => {
@@ -90,6 +91,17 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
     setSelectedProperty(null);
   };
 
+  // Open a specific property when requested (e.g. from master activity log)
+  useEffect(() => {
+    if (!openPropertyName) return;
+    const target = properties.find((p) => p.name === openPropertyName);
+    if (target) {
+      setSelectedProperty(target);
+      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+    }
+    if (onConsumeOpenProperty) onConsumeOpenProperty();
+  }, [openPropertyName, properties]);
+
   const handleToggleArchive = async (id, archived) => {
     const { toggleArchiveProperty } = await import('../lib/propertiesApi');
     await toggleArchiveProperty(id, !archived);
@@ -136,10 +148,15 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
     }
   };
 
+  const isPropertyProfileOpen = !!selectedProperty;
+
   return (
     <div className="properties-container">
+      {!isPropertyProfileOpen && (
       <Sidebar
         title="Properties"
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         items={[
           { key: 'all', label: 'All Properties', active: selectedFilter === 'all' && !showArchived, onClick: () => handleFilterClick('all') },
           { key: 'fav', label: 'Favourites', active: selectedFilter === 'fav' && !showArchived, onClick: () => handleFilterClick('fav') },
@@ -149,6 +166,7 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
           { key: 'sold', label: 'Acquired', active: selectedFilter === 'sold' && !showArchived, onClick: () => handleFilterClick('sold') },
         ]}
       />
+      )}
 
       {/* Main content */}
       <div className="properties-content">
@@ -174,21 +192,27 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
               </div>
             </div>
 
-            <table className="properties-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '40px' }}></th>
-                  <th>Name</th>
-                  <th>Description</th>
-                  <th>Guide Price</th>
-                  <th>Status</th>
-                  <th style={{ width: '120px', textAlign: 'right' }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleProperties.map(property => (
-                  <tr key={property.id}>
-                    <td onClick={(e) => e.stopPropagation()} style={{ width: '40px' }}>
+            <div className="properties-tiles-container">
+              <div className="properties-table-header-row">
+                <div className="property-tile-column-header"></div>
+                <div className="property-tile-column-header">Name</div>
+                <div className="property-tile-column-header">Description</div>
+                <div className="property-tile-column-header">Guide Price</div>
+                <div className="property-tile-column-header">Status</div>
+                <div className="property-tile-column-header"></div>
+              </div>
+              {visibleProperties.length === 0 ? (
+                <div className="empty-row">
+                  {showArchived ? "No archived properties." : "No active properties."}
+                </div>
+              ) : (
+                visibleProperties.map(property => (
+                  <div 
+                    key={property.id} 
+                    onClick={() => handleRowClick(property)} 
+                    className="property-tile clickable-row"
+                  >
+                    <div className="property-tile-favourite" onClick={(e) => { e.stopPropagation(); }}>
                       <button
                         aria-label={property.favourite ? 'Unfavourite' : 'Favourite'}
                         className="icon-button"
@@ -201,28 +225,26 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
                       >
                         <FontAwesomeIcon icon={property.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '18px', height: '18px' }} />
                       </button>
-                    </td>
-                    <td onClick={() => handleRowClick(property)}>{property.name}</td>
-                    <td onClick={() => handleRowClick(property)}>{property.description}</td>
-                    <td onClick={() => handleRowClick(property)}>{property.price ? `£${Number(property.price).toLocaleString()}` : ''}</td>
-                    <td onClick={() => handleRowClick(property)}>{property.status}</td>
-                    <td style={{ width: '120px', textAlign: 'right' }}>
-                      <div className="action-buttons">
-                        <button
-                          onClick={(e) => {
-                          e.stopPropagation(); // Prevent row click
+                    </div>
+                    <div className="property-tile-name">{property.name}</div>
+                    <div className="property-tile-description">{property.description || "—"}</div>
+                    <div className="property-tile-price">{property.price ? `£${Number(property.price).toLocaleString()}` : "—"}</div>
+                    <div className="property-tile-status">{property.status || "—"}</div>
+                    <div className="property-tile-actions" onClick={(e) => { e.stopPropagation(); }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleToggleArchive(property.id, property.archived);
-                          }}
-                          className={property.archived ? "unarchive-button" : "archive-button"}
-                        >
-                          {property.archived ? "Restore" : "Archive"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        }}
+                        className={property.archived ? "restore-btn" : "archive-btn"}
+                      >
+                        {property.archived ? "Restore" : "Archive"}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </>
         ) : (
           <PropertyPage 
@@ -231,8 +253,19 @@ const PropertiesPage = ({ professionals, properties = [], onArchiveProperty, onR
             professionals={professionals}
             onUpdateProperty={handleUpdateProperty}
             onDeleteProperty={handleDeleteProperty}
-            allProperties={properties}
+            allProperties={allProperties}
             onSelectProperty={(property) => setSelectedProperty(property)}
+            clients={clients}
+            updateClientStatus={updateClientStatus}
+            createNewSalesProgression={createNewSalesProgression}
+            removeSalesProgressionRow={removeSalesProgressionRow}
+            updatePropertyOffer={async (propertyName, updates) => {
+              const property = allProperties.find(p => p.name === propertyName);
+              if (property?.id) {
+                const { updatePropertyById } = await import('../lib/propertiesApi');
+                await updatePropertyById(property.id, updates);
+              }
+            }}
           />
         )}
       </div>

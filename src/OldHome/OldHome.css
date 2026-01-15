@@ -1,0 +1,16 @@
+.old-home-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.old-home-container h1 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.old-home-container p {
+  color: #666;
+  font-size: 1rem;
+}
+

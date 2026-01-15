@@ -5,8 +5,22 @@ import ComparablesSelectionModal from "./ComparablesSelectionModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import gdLogo from "../assets/gd-logo.jpeg";
+import EntityActivityLog from "../EntityActivityLog";
 
-function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, onDeleteProperty, allProperties = [], onSelectProperty }) {
+function PropertyPage({ 
+  property, 
+  onBack, 
+  professionals = [], 
+  onUpdateProperty, 
+  onDeleteProperty, 
+  allProperties = [], 
+  onSelectProperty,
+  clients = [],
+  updateClientStatus,
+  createNewSalesProgression,
+  updatePropertyOffer,
+  removeSalesProgressionRow
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showComparablesModal, setShowComparablesModal] = useState(false);
@@ -357,6 +371,13 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
         >
           Comparables
         </button>
+        <button
+          className={`property-tab ${activeTab === "activity" ? "active" : ""}`}
+          onClick={() => setActiveTab("activity")}
+          type="button"
+        >
+          Activity
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -599,6 +620,23 @@ function PropertyPage({ property, onBack, professionals = [], onUpdateProperty, 
           excludePropertyId={property.id}
           existingComparableIds={(property.comparables || []).map(c => c.id)}
         />
+      )}
+
+      {/* Activity Tab Content */}
+      {activeTab === "activity" && (
+        <div style={{ padding: "1.25rem 0.5rem 1.25rem 0.75rem", width: "100%", marginTop: "0", overflow: "hidden", boxSizing: "border-box" }}>
+          <EntityActivityLog
+            entityType="property"
+            entityName={property.name}
+            title=""
+            clients={clients}
+            properties={allProperties}
+            onUpdateClientStatus={updateClientStatus}
+            onUpdatePropertyOffer={updatePropertyOffer}
+            onCreateSalesProgression={createNewSalesProgression}
+            onRemoveSalesProgression={removeSalesProgressionRow}
+          />
+        </div>
       )}
     </div>
   );
