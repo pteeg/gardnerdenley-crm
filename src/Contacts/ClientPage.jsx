@@ -66,7 +66,8 @@ function ClientPage({
   const [showMoreInfoModal, setShowMoreInfoModal] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState("prospectiveProperties");
+  const [activeTab, setActiveTab] = useState("brief");
+  const [briefText, setBriefText] = useState(client?.brief || "");
 
   const [editedClient, setEditedClient] = useState(client);
   const [originalName, setOriginalName] = useState(client?.name || "");
@@ -303,218 +304,225 @@ function ClientPage({
                 <div className="client-current-address">
                   {client.currentAddress || "No current address provided"}
                 </div>
-                <div className="client-status">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    {/* Type first */}
-                    {Array.isArray(client.types) && client.types.length > 0 && (
-                      <>
-                        {client.types.map((t, idx) => (
-                          <span
-                            key={idx}
-                            className="status-badge"
-                            style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </>
-                    )}
-                    {/* Call / Email buttons */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <div style={{ position: "relative" }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (client.phoneNumber) {
-                              window.location.href = `tel:${client.phoneNumber}`;
-                            }
-                          }}
-                          onMouseEnter={() => setShowPhoneTooltip(true)}
-                          onMouseLeave={() => setShowPhoneTooltip(false)}
-                          style={{
-                            background: "#f3f4f6",
-                            border: "none",
-                            cursor: client.phoneNumber ? "pointer" : "default",
-                            padding: 0,
-                            width: "32px",
-                            height: "32px",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#555555"
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faPhone} style={{ fontSize: "1.2rem" }} />
-                        </button>
-                        {showPhoneTooltip && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "115%",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              background: "#333",
-                              color: "#fff",
-                              padding: "0.35rem 0.5rem",
-                              borderRadius: "4px",
-                              fontSize: "0.8rem",
-                              whiteSpace: "nowrap",
-                              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                              zIndex: 10
-                            }}
-                          >
-                            {buildPhoneTooltip()}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ position: "relative" }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (client.email) {
-                              window.location.href = `mailto:${client.email}`;
-                            }
-                          }}
-                          onMouseEnter={() => setShowEmailTooltip(true)}
-                          onMouseLeave={() => setShowEmailTooltip(false)}
-                          style={{
-                            background: "#f3f4f6",
-                            border: "none",
-                            cursor: client.email ? "pointer" : "default",
-                            padding: 0,
-                            width: "32px",
-                            height: "32px",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#555555"
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faAt} style={{ fontSize: "1.2rem" }} />
-                        </button>
-                        {showEmailTooltip && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "115%",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              background: "#333",
-                              color: "#fff",
-                              padding: "0.35rem 0.5rem",
-                              borderRadius: "4px",
-                              fontSize: "0.8rem",
-                              whiteSpace: "nowrap",
-                              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                              zIndex: 10
-                            }}
-                          >
-                            {buildEmailTooltip()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {/* Status last */}
-                    <span className="budget-label" style={{ marginLeft: '6px' }}>Status:</span>
-                    <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-') }`}>
-                      {client.status || "Active"}
-                    </span>
-                  </div>
-                  {/* Budget under type / status / buttons */}
-                  <div style={{ marginTop: '0.4rem', fontSize: '1rem' }}>
-                    <span style={{ color: '#555', fontWeight: 400 }}>Budget: </span>
-                    <span style={{ fontWeight: 600 }}>
-                      {client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not specified"}
-                    </span>
-                  </div>
-                  {/* Position and Disposal */}
-                  <div style={{ marginTop: '0.4rem', fontSize: '1rem' }}>
-                    <span style={{ color: '#555', fontWeight: 400 }}>Position: </span>
-                    <span style={{ fontWeight: 500 }}>
-                      {client.positionFunding || "Not specified"}
-                    </span>
-                  </div>
-                  <div style={{ marginTop: '0.4rem', fontSize: '1rem' }}>
-                    <span style={{ color: '#555', fontWeight: 400 }}>Disposal: </span>
-                    <span style={{ fontWeight: 500 }}>
-                      {client.disposal || "Not specified"}
-                    </span>
-                  </div>
-                  {/* Options and Heart buttons */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                    <div className="options-dropdown-container" style={{ position: 'relative' }}>
-                      <button 
-                        className="edit-button" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowOptionsDropdown(!showOptionsDropdown);
+
+                {/* Row: Phone, Email, Favourite, Options */}
+                <div className="client-contact-row">
+                  <div style={{ position: "relative" }}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (client.phoneNumber) {
+                          window.location.href = `tel:${client.phoneNumber}`;
+                        }
+                      }}
+                      onMouseEnter={() => setShowPhoneTooltip(true)}
+                      onMouseLeave={() => setShowPhoneTooltip(false)}
+                      style={{
+                        background: "#f3f4f6",
+                        border: "none",
+                        cursor: client.phoneNumber ? "pointer" : "default",
+                        padding: 0,
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#555555"
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faPhone} style={{ fontSize: "1.2rem" }} />
+                    </button>
+                    {showPhoneTooltip && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "115%",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          background: "#333",
+                          color: "#fff",
+                          padding: "0.35rem 0.5rem",
+                          borderRadius: "4px",
+                          fontSize: "0.8rem",
+                          whiteSpace: "nowrap",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                          zIndex: 10
                         }}
                       >
-                        Options
-                      </button>
-                      {showOptionsDropdown && (
-                        <div className="options-dropdown">
+                        {buildPhoneTooltip()}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (client.email) {
+                          window.location.href = `mailto:${client.email}`;
+                        }
+                      }}
+                      onMouseEnter={() => setShowEmailTooltip(true)}
+                      onMouseLeave={() => setShowEmailTooltip(false)}
+                      style={{
+                        background: "#f3f4f6",
+                        border: "none",
+                        cursor: client.email ? "pointer" : "default",
+                        padding: 0,
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#555555"
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faAt} style={{ fontSize: "1.2rem" }} />
+                    </button>
+                    {showEmailTooltip && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "115%",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          background: "#333",
+                          color: "#fff",
+                          padding: "0.35rem 0.5rem",
+                          borderRadius: "4px",
+                          fontSize: "0.8rem",
+                          whiteSpace: "nowrap",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                          zIndex: 10
+                        }}
+                      >
+                        {buildEmailTooltip()}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    aria-label={client.favourite ? 'Unfavourite' : 'Favourite'}
+                    className="icon-button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (updateClientInfo && client.name) {
+                        await updateClientInfo(client.name, { favourite: !client.favourite });
+                      } else if (client.id) {
+                        const { updateClientById } = await import('../lib/clientsApi');
+                        await updateClientById(client.id, { favourite: !client.favourite });
+                      }
+                    }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <FontAwesomeIcon icon={client.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '22px', height: '22px' }} />
+                  </button>
+
+                  <div className="options-dropdown-container">
+                    <button 
+                      className="edit-button client-options-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowOptionsDropdown(!showOptionsDropdown);
+                      }}
+                    >
+                      Options
+                    </button>
+                    {showOptionsDropdown && (
+                      <div className="options-dropdown">
+                        <button
+                          className="dropdown-item"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditedClient(client);
+                            setOriginalName(client.name);
+                            setShowEditModal(true);
+                            setShowOptionsDropdown(false);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        {client.status === "Archived" && updateClientStatus ? (
                           <button
                             className="dropdown-item"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              setEditedClient(client);
-                              setOriginalName(client.name);
-                              setShowEditModal(true);
+                              await updateClientStatus(client.name, "Searching");
                               setShowOptionsDropdown(false);
                             }}
                           >
-                            Edit
+                            Unarchive
                           </button>
-                          {client.status === "Archived" && updateClientStatus ? (
+                        ) : (
+                          onArchiveClient && (
                             <button
                               className="dropdown-item"
-                              onClick={async (e) => {
+                              onClick={(e) => {
                                 e.stopPropagation();
-                                await updateClientStatus(client.name, "Searching");
+                                handleArchiveClient();
                                 setShowOptionsDropdown(false);
                               }}
                             >
-                              Unarchive
+                              Archive
                             </button>
-                          ) : (
-                            onArchiveClient && (
-                              <button
-                                className="dropdown-item"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleArchiveClient();
-                                  setShowOptionsDropdown(false);
-                                }}
-                              >
-                                Archive
-                              </button>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      aria-label={client.favourite ? 'Unfavourite' : 'Favourite'}
-                      className="icon-button"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (updateClientInfo && client.name) {
-                          await updateClientInfo(client.name, { favourite: !client.favourite });
-                        } else if (client.id) {
-                          const { updateClientById } = await import('../lib/clientsApi');
-                          await updateClientById(client.id, { favourite: !client.favourite });
-                        }
-                      }}
-                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <FontAwesomeIcon icon={client.favourite ? faHeartSolid : faHeartRegular} style={{ color: '#555555', width: '22px', height: '22px' }} />
-                    </button>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                {/* Row: Contact Type */}
+                <div style={{ marginTop: '1.1rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#555', fontWeight: 400 }}>Contact Type: </span>
+                  {Array.isArray(client.types) && client.types.length > 0 ? (
+                    client.types.map((t, idx) => (
+                      <span
+                        key={idx}
+                        className="status-badge"
+                        style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}
+                      >
+                        {t}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontWeight: 500 }}>Not specified</span>
+                  )}
+                </div>
+
+                {/* Row: Status (just above Budget) */}
+                <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span className="budget-label">Status:</span>
+                  <span className={`status-badge ${(client.status || "active").toLowerCase().replace(/\s/g, '-') }`}>
+                    {client.status || "Active"}
+                  </span>
+                </div>
+
+                {/* Row: Budget */}
+                <div style={{ marginTop: '1.1rem', fontSize: '1rem' }}>
+                  <span style={{ color: '#555', fontWeight: 400 }}>Budget: </span>
+                  <span style={{ fontWeight: 600 }}>
+                    {client.maxBudget ? `£${Number(client.maxBudget).toLocaleString()}` : "Not specified"}
+                  </span>
+                </div>
+
+                {/* Row: Position */}
+                <div style={{ marginTop: '0.35rem', fontSize: '1rem' }}>
+                  <span style={{ color: '#555', fontWeight: 400 }}>Position: </span>
+                  <span style={{ fontWeight: 500 }}>
+                    {client.positionFunding || "Not specified"}
+                  </span>
+                </div>
+
+                {/* Row: Disposal */}
+                <div style={{ marginTop: '0.35rem', fontSize: '1rem' }}>
+                  <span style={{ color: '#555', fontWeight: 400 }}>Disposal: </span>
+                  <span style={{ fontWeight: 500 }}>
+                    {client.disposal || "Not specified"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -607,7 +615,31 @@ function ClientPage({
                   )}
                   {activeTab === "brief" && (
                     <div>
-                      <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#333' }}>{client.brief || "No brief provided"}</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontWeight: 600, color: '#333' }}>Brief</span>
+                        <button
+                          type="button"
+                          style={{ 
+                            padding: '0.25rem 0.6rem', 
+                            fontSize: '0.8rem',
+                            background: '#f3f4f6',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            color: '#333',
+                            fontWeight: 500
+                          }}
+                          onClick={() => {
+                            setBriefText(client.brief || "");
+                            setShowBriefModal(true);
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#333' }}>
+                        {client.brief || "No brief provided"}
+                      </p>
                     </div>
                   )}
                   {activeTab === "searchDetails" && (
@@ -880,16 +912,50 @@ function ClientPage({
         </div>
       )}
 
-      {/* Brief Modal */}
+      {/* Brief Edit Modal */}
       {showBriefModal && (
         <div className="modal-overlay" onClick={() => setShowBriefModal(false)}>
           <div className="modal-content" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
-            <h3>Brief</h3>
+            <h3>Edit</h3>
             <div style={{ marginTop: '1rem' }}>
-              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{client.brief || "No brief provided"}</p>
+              <textarea
+                rows={6}
+                style={{ width: '100%', resize: 'vertical' }}
+                value={briefText}
+                onChange={(e) => setBriefText(e.target.value)}
+                placeholder="Type the client's brief..."
+              />
             </div>
             <div className="modal-buttons">
-              <button onClick={() => setShowBriefModal(false)}>Close</button>
+              <button
+                className="save-btn"
+                onClick={async () => {
+                  try {
+                    const trimmed = briefText.trim();
+                    if (updateClientInfo && client.name) {
+                      await updateClientInfo(client.name, { brief: trimmed });
+                    } else if (client.id) {
+                      const { updateClientById } = await import('../lib/clientsApi');
+                      await updateClientById(client.id, { brief: trimmed });
+                    }
+                    setShowBriefModal(false);
+                  } catch (e) {
+                    console.error('Error updating brief:', e);
+                  }
+                }}
+                disabled={!briefText.trim()}
+              >
+                Save
+              </button>
+              <button
+                className="cancel-btn"
+                onClick={() => {
+                  setShowBriefModal(false);
+                  setBriefText(client.brief || "");
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

@@ -49,6 +49,24 @@
   overflow: hidden;
 }
 
+/* Contact row under name/address */
+.client-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Bottom row for contact type + status */
+.client-type-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
 /* Ensure tabs tile matches name tile height but doesn't grow beyond it */
 .client-tiles-container {
   align-items: stretch;
@@ -108,9 +126,9 @@
 
 .status-badge {
   display: inline-block;
-  padding: 0.15rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.72rem;
+  padding: 0.04rem 0.32rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
   font-weight: 500;
   line-height: 1.1;
   max-width: fit-content;
@@ -244,6 +262,16 @@
   font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s ease;
+}
+
+/* Smaller options button in client header to match phone/email height */
+.client-options-button {
+  padding: 0 0.75rem;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
 }
 
 .edit-button:hover {

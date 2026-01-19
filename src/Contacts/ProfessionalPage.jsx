@@ -43,141 +43,209 @@ function ProfessionalPage({ professional, onBack, properties = [], salesProgress
   // Referrals: clients whose referralContact matches this professional's name
   const referredClients = (clients || []).filter(c => (c.referralContact || "") === (displayProfessional?.name || professional.name));
 
+  const [activeTab, setActiveTab] = useState("referrals");
+
   return (
     <div className="professional-page">
       {/* Header Section */}
-      <div className="professional-header">
-        <div className="header-left">
-          <button className="back-btn" onClick={onBack} type="button" style={{ marginBottom: '8px' }}>
+      <div className="professional-header" style={{ position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+          <button className="back-btn" onClick={onBack} type="button">
             <i className="fa-solid fa-arrow-left" style={{ color: '#555555', fontSize: '1.4rem' }} />
           </button>
-          <h1 className="professional-title">{displayProfessional.name}</h1>
-          <div className="header-meta">
-            <span className="meta-label">Type:</span>
-            <span className="type-pill">{displayProfessional.type || '—'}</span>
-            <span className="meta-label" style={{ marginLeft: '12px' }}>Company:</span>
-            <span className="meta-value">{displayProfessional.company || 'Not provided'}</span>
-          </div>
-          <div className="header-meta">
-            <span className="meta-label">Work Number:</span>
-            <span className="meta-value">{displayProfessional.phoneWork || displayProfessional.phoneNumber || 'Not provided'}</span>
-            <span className="meta-label" style={{ marginLeft: '12px' }}>Email:</span>
-            <span className="meta-value">{displayProfessional.email || 'Not provided'}</span>
-          </div>
-          <div className="header-meta">
-            <span className="meta-label">Mobile Number:</span>
-            <span className="meta-value">{displayProfessional.phoneMobile || 'Not provided'}</span>
-          </div>
-        </div>
-        <div className="header-actions">
-          <div className="action-buttons">
-            <button className="edit-button" type="button" onClick={() => setShowEdit(true)}>Edit</button>
-            {professional.archived ? (
-              <button 
-                className="restore-button" 
-                type="button" 
-                onClick={async () => {
-                  if (onRestoreProfessional) {
-                    await onRestoreProfessional(professional);
-                  }
-                }}
-              >
-                Unarchive
-              </button>
-            ) : (
-              <button 
-                className="archive-button" 
-                type="button" 
-                onClick={async () => {
-                  if (onArchiveProfessional) {
-                    await onArchiveProfessional(professional);
-                  }
-                }}
-              >
-                Archive
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="professional-content">
-        {/* Left Column */}
-        <div className="professional-main">
-          <div className="professional-card">
-            <h2 className="card-title">Referrals ({referredClients.length})</h2>
-            {referredClients.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {referredClients.map((c, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      const event = new CustomEvent('openClientByName', { detail: { name: c.name } });
-                      window.dispatchEvent(event);
-                    }}
-                    style={{
-                      background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
-                      borderRadius: 16, padding: '6px 10px', cursor: 'pointer'
-                    }}
+          {/* Wrapper to keep name tile and tabs tile on the same row */}
+          <div className="professional-tiles-container" style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flex: 1, flexWrap: "nowrap", width: "100%" }}>
+            {/* Left tile - Name and info */}
+            <div className="professional-header-tile professional-name-tile">
+              <div className="professional-title-section">
+                <h1 className="professional-title">
+                  {displayProfessional.name}
+                </h1>
+                <div className="professional-meta-info">
+                  <div style={{ marginTop: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Type: </span>
+                    <span className="type-pill">{displayProfessional.type || '—'}</span>
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Company: </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {displayProfessional.company || "Not provided"}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Work Number: </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {displayProfessional.phoneWork || displayProfessional.phoneNumber || "Not provided"}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Mobile Number: </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {displayProfessional.phoneMobile || "Not provided"}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
+                    <span style={{ color: '#555', fontWeight: 400 }}>Email: </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {displayProfessional.email || "Not provided"}
+                    </span>
+                  </div>
+                </div>
+                {/* Options button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                  <button 
+                    className="edit-button" 
+                    onClick={() => setShowEdit(true)}
+                    style={{ padding: '0 0.75rem', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}
                   >
-                    {c.name}
+                    Edit
                   </button>
-                ))}
+                  {professional.archived ? (
+                    <button 
+                      className="restore-button" 
+                      type="button" 
+                      onClick={async () => {
+                        if (onRestoreProfessional) {
+                          await onRestoreProfessional(professional);
+                        }
+                      }}
+                      style={{ padding: '0 0.75rem', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}
+                    >
+                      Unarchive
+                    </button>
+                  ) : (
+                    <button 
+                      className="archive-button" 
+                      type="button" 
+                      onClick={async () => {
+                        if (onArchiveProfessional) {
+                          await onArchiveProfessional(professional);
+                        }
+                      }}
+                      style={{ padding: '0 0.75rem', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}
+                    >
+                      Archive
+                    </button>
+                  )}
+                </div>
               </div>
-            ) : (
-              <p className="empty-text">No referrals recorded.</p>
-            )}
-          </div>
-          <div className="professional-card">
-            <h2 className="card-title">Active Properties Represented</h2>
-            {activeProperties.length > 0 ? (
-              <div className="properties-list">
-                {activeProperties.map((property, index) => (
-                  <div key={index} className="property-item">
-                    <strong>{property.name}</strong> - {property.address}
-                    <br />
-                    <span className="property-details">
-                      Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : 'Not set'}
-                    </span>
-                  </div>
-                ))}
+            </div>
+            {/* Right tile - Tabs and content */}
+            <div className="professional-header-tile professional-tabs-tile" style={{ flex: 1 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", overflow: "hidden" }}>
+                {/* Tab buttons */}
+                <div className="professional-tabs">
+                  <button
+                    type="button"
+                    className={`professional-tab-button ${activeTab === "referrals" ? "active" : ""}`}
+                    onClick={() => setActiveTab("referrals")}
+                  >
+                    Referrals
+                  </button>
+                  <button
+                    type="button"
+                    className={`professional-tab-button ${activeTab === "activeProperties" ? "active" : ""}`}
+                    onClick={() => setActiveTab("activeProperties")}
+                  >
+                    Active Properties Represented
+                  </button>
+                  <button
+                    type="button"
+                    className={`professional-tab-button ${activeTab === "historicalProperties" ? "active" : ""}`}
+                    onClick={() => setActiveTab("historicalProperties")}
+                  >
+                    Historical Properties
+                  </button>
+                </div>
+                {/* Tab content */}
+                <div className="professional-tab-content">
+                  {activeTab === "referrals" && (
+                    <div>
+                      {referredClients.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {referredClients.map((c, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                const event = new CustomEvent('openClientByName', { detail: { name: c.name } });
+                                window.dispatchEvent(event);
+                              }}
+                              style={{
+                                background: '#f3f4f6', border: '1px solid #d1d5db', color: '#333',
+                                borderRadius: 16, padding: '6px 10px', cursor: 'pointer'
+                              }}
+                            >
+                              {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ color: "#666", fontStyle: "italic" }}>No referrals recorded.</p>
+                      )}
+                    </div>
+                  )}
+                  {activeTab === "activeProperties" && (
+                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                      {activeProperties.length > 0 ? (
+                        <div className="properties-list">
+                          {activeProperties.map((property, index) => (
+                            <div key={index} className="property-item">
+                              <strong>{property.name}</strong> - {property.address}
+                              <br />
+                              <span className="property-details">
+                                Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : 'Not set'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ color: "#666", fontStyle: "italic" }}>No active properties currently being represented.</p>
+                      )}
+                    </div>
+                  )}
+                  {activeTab === "historicalProperties" && (
+                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                      {completedProperties.length > 0 ? (
+                        <div className="properties-list">
+                          {completedProperties.map((property, index) => (
+                            <div key={index} className="property-item historical">
+                              <strong>{property.name}</strong> - {property.address}
+                              <br />
+                              <span className="property-details">
+                                Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : 'Not set'} •
+                                <span className="completed-badge"> Deal Completed</span>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ color: "#666", fontStyle: "italic" }}>No completed properties yet.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : (
-              <p className="empty-text">No active properties currently being represented.</p>
-            )}
-          </div>
-
-          <div className="professional-card">
-            <h2 className="card-title">Historical Properties</h2>
-            {completedProperties.length > 0 ? (
-              <div className="properties-list">
-                {completedProperties.map((property, index) => (
-                  <div key={index} className="property-item historical">
-                    <strong>{property.name}</strong> - {property.address}
-                    <br />
-                    <span className="property-details">
-                      Guide Price: {property.price ? `£${Number(property.price).toLocaleString()}` : 'Not set'} •
-                      <span className="completed-badge"> Deal Completed</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="empty-text">No completed properties yet.</p>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Activity log for this professional (matches by name using client-type activities) */}
-      <div style={{ padding: "0 1.5rem 1.5rem" }}>
-        <EntityActivityLog
-          entityType="client"
-          entityName={displayProfessional.name}
-          title="Activity for this professional"
-        />
+      {/* Main Content Area */}
+      <div style={{ padding: "0.1rem 1.5rem 1.25rem 1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1.25rem", paddingLeft: "calc(56px + 0.75rem)" }}>
+          {/* Activity Log (full width) */}
+          <div style={{ overflow: "hidden", boxSizing: "border-box" }}>
+            <EntityActivityLog
+              entityType="professional"
+              entityName={displayProfessional.name}
+              title="Recent Activity"
+              clients={clients}
+              properties={properties}
+              professionals={[displayProfessional]}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Edit Modal */}

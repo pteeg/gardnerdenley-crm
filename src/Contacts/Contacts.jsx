@@ -280,11 +280,13 @@ function Contacts({
     }
   };
 
-  const isClientProfileOpen = subPage === "Clients" && !!selectedClient;
+  const isProfileOpen =
+    (subPage === "Clients" && !!selectedClient) ||
+    (subPage === "Professionals" && !!selectedProfessional);
 
   return (
     <div className="contacts-container">
-      {!isClientProfileOpen && (
+      {!isProfileOpen && (
         <Sidebar
         title="Contacts"
         collapsed={sidebarCollapsed}
@@ -420,7 +422,7 @@ function Contacts({
       />
       )}
 
-      <div className={`contacts-main ${isClientProfileOpen ? 'client-profile-open' : ''}`}>
+      <div className={`contacts-main ${isProfileOpen ? 'client-profile-open' : ''}`}>
         {subPage === "Clients" && !selectedClient && (
           <>
             <ClientsTable

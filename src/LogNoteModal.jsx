@@ -6,19 +6,24 @@ function LogNoteModal({
   onClose, 
   clients = [], 
   properties = [], 
+  professionals = [],
   preSelectedClient = null,
   preSelectedProperty = null,
+  preSelectedProfessional = null,
   onSave,
   title = "Add Note",
   editingNote = null // { noteText, timestamp, activityId }
 }) {
   const [clientChecked, setClientChecked] = useState(!!preSelectedClient);
   const [propertyChecked, setPropertyChecked] = useState(!!preSelectedProperty);
+  const [professionalChecked, setProfessionalChecked] = useState(!!preSelectedProfessional);
   const [selectedClient, setSelectedClient] = useState(preSelectedClient || null);
   const [selectedProperty, setSelectedProperty] = useState(preSelectedProperty || null);
+  const [selectedProfessional, setSelectedProfessional] = useState(preSelectedProfessional || null);
   const [noteText, setNoteText] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [propertySearch, setPropertySearch] = useState("");
+  const [professionalSearch, setProfessionalSearch] = useState("");
   
   // Initialize date and time - use editing note timestamp if available, otherwise current date/time
   const getInitialDate = () => {
@@ -42,10 +47,10 @@ function LogNoteModal({
   const [dateValue, setDateValue] = useState(getInitialDate());
   const [timeValue, setTimeValue] = useState(getInitialTime());
 
-  // Update selected client/property when preSelected changes or when editing
+  // Update selected client/property/professional when preSelected changes or when editing
   useEffect(() => {
     if (editingNote) {
-      // When editing, find and set the client and property based on the activity
+      // When editing, find and set the client, property, and professional based on the activity
       if (editingNote.clientName) {
         const client = clients.find(c => c.name === editingNote.clientName);
         if (client) {
@@ -60,6 +65,13 @@ function LogNoteModal({
           setPropertyChecked(true);
         }
       }
+      if (editingNote.professionalName) {
+        const professional = professionals.find(p => p.name === editingNote.professionalName);
+        if (professional) {
+          setSelectedProfessional(professional);
+          setProfessionalChecked(true);
+        }
+      }
       setNoteText(editingNote.noteText || "");
       if (editingNote.timestamp) {
         const date = new Date(editingNote.timestamp);
@@ -72,24 +84,30 @@ function LogNoteModal({
     } else if (preSelectedProperty) {
       setSelectedProperty(preSelectedProperty);
       setPropertyChecked(true);
+    } else if (preSelectedProfessional) {
+      setSelectedProfessional(preSelectedProfessional);
+      setProfessionalChecked(true);
     }
-  }, [preSelectedClient, preSelectedProperty, editingNote, clients, properties]);
+  }, [preSelectedClient, preSelectedProperty, preSelectedProfessional, editingNote, clients, properties, professionals]);
 
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
       setClientChecked(!!preSelectedClient);
       setPropertyChecked(!!preSelectedProperty);
+      setProfessionalChecked(!!preSelectedProfessional);
       setSelectedClient(preSelectedClient || null);
       setSelectedProperty(preSelectedProperty || null);
+      setSelectedProfessional(preSelectedProfessional || null);
       setNoteText("");
       setClientSearch("");
       setPropertySearch("");
+      setProfessionalSearch("");
       const now = new Date();
       setDateValue(now.toISOString().split('T')[0]);
       setTimeValue(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
     }
-  }, [isOpen, preSelectedClient, preSelectedProperty]);
+  }, [isOpen, preSelectedClient, preSelectedProperty, preSelectedProfessional]);
   
   // Update note text when editingNote changes
   useEffect(() => {
@@ -113,6 +131,13 @@ function LogNoteModal({
     }
   }, [propertyChecked]);
 
+  useEffect(() => {
+    if (!professionalChecked) {
+      setSelectedProfessional(null);
+      setProfessionalSearch("");
+    }
+  }, [professionalChecked]);
+
   if (!isOpen) return null;
 
   const filteredClients = clients.filter(client => {
@@ -133,11 +158,21 @@ function LogNoteModal({
            (property.address && property.address.toLowerCase().includes(searchLower));
   });
 
+  const filteredProfessionals = professionals.filter(professional => {
+    if (!professionalSearch.trim()) return true;
+    const searchLower = professionalSearch.toLowerCase();
+    const name = professional.name || "";
+    const company = professional.company || "";
+    return name.toLowerCase().includes(searchLower) ||
+           company.toLowerCase().includes(searchLower);
+  });
+
   const handleSave = () => {
     if (!noteText.trim()) return;
-    if (!clientChecked && !propertyChecked) return;
+    if (!clientChecked && !propertyChecked && !professionalChecked) return;
     if (clientChecked && !selectedClient) return;
     if (propertyChecked && !selectedProperty) return;
+    if (professionalChecked && !selectedProfessional) return;
     
     // Combine date and time into ISO string
     const [hours, minutes] = timeValue.split(':');
@@ -149,6 +184,7 @@ function LogNoteModal({
     onSave({
       client: clientChecked ? selectedClient : null,
       property: propertyChecked ? selectedProperty : null,
+      professional: professionalChecked ? selectedProfessional : null,
       note: noteText.trim(),
       timestamp,
       isEdit: !!editingNote,
@@ -297,6 +333,68 @@ function LogNoteModal({
             )}
           </div>
 
+          {/* Professional Selection */}
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={professionalChecked}
+                onChange={(e) => setProfessionalChecked(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', margin: 0, flexShrink: 0 }}
+              />
+              <span>Professional</span>
+            </label>
+            {professionalChecked && (
+              <>
+                {selectedProfessional ? (
+                  <div className="selected-item">
+                    <span>{selectedProfessional.name}</span>
+                    <button 
+                      type="button"
+                      className="clear-selection-btn"
+                      onClick={() => setSelectedProfessional(null)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Search professionals..."
+                      value={professionalSearch}
+                      onChange={(e) => setProfessionalSearch(e.target.value)}
+                      className="search-input"
+                    />
+                    {professionalSearch.trim() && (
+                      <div className="selection-list">
+                        {filteredProfessionals.slice(0, 10).map((professional) => (
+                          <div
+                            key={professional.id || professional.name}
+                            className="selection-item"
+                            onClick={() => {
+                              setSelectedProfessional(professional);
+                              setProfessionalSearch("");
+                            }}
+                          >
+                            <div>
+                              <strong>{professional.name}</strong>
+                              {professional.company && (
+                                <span style={{ marginLeft: '8px', color: '#666' }}>
+                                  - {professional.company}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
           {/* Date and Time */}
           <div className="form-group">
             <label>Date & Time</label>
@@ -335,9 +433,10 @@ function LogNoteModal({
             onClick={handleSave}
             disabled={
               !noteText.trim() || 
-              !clientChecked && !propertyChecked ||
+              !clientChecked && !propertyChecked && !professionalChecked ||
               (clientChecked && !selectedClient) ||
-              (propertyChecked && !selectedProperty)
+              (propertyChecked && !selectedProperty) ||
+              (professionalChecked && !selectedProfessional)
             }
           >
             Save Note

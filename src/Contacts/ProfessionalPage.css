@@ -1,18 +1,66 @@
 .professional-page {
   padding: 0;
   font-family: sans-serif;
-  background: white;
+  background: #f8f9fa;
 }
 
-/* Header */
+/* Header Section */
 .professional-header {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  padding: 1.25rem 1.5rem;
+  background: #f8f9fa;
+  padding: 1.25rem 1.5rem 0.75rem;
+}
+
+.professional-header-tile {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem 0.75rem 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e3eef8;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1.25rem;
+  gap: 0;
+}
+
+.professional-tiles-container {
+  align-items: flex-start;
+}
+
+.professional-name-tile {
+  flex: 0 0 400px;
+  padding-bottom: 1.25rem;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.professional-name-tile .professional-title-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.professional-tabs-tile {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 1.25rem;
+  overflow: hidden;
+}
+
+/* Ensure tabs tile matches name tile height but doesn't grow beyond it */
+.professional-tiles-container {
+  align-items: stretch;
+}
+
+.professional-tiles-container > .professional-name-tile {
+  flex-shrink: 0;
+}
+
+.professional-tiles-container > .professional-tabs-tile {
+  align-self: stretch;
+  min-height: 0;
 }
 
 .header-actions {
@@ -77,12 +125,19 @@
   background-color: #229954;
 }
 
+.professional-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
 .professional-title {
-  font-size: 2.2rem;
+  font-size: 2.5rem;
   font-weight: 600;
   color: #333;
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   line-height: 1.2;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .header-meta {
@@ -104,20 +159,46 @@
   font-weight: 600;
 }
 
-/* Content */
-.professional-content {
-  display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
-  background: #f8f9fa;
-  min-height: calc(100vh - 200px);
+/* Professional Tabs */
+.professional-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e9ecef;
+  background: white;
+  padding: 0 1.5rem;
+  margin: 0 -1.5rem; /* Negative margin to extend to tile edges, then padding brings content back in */
 }
 
-.professional-sidebar {
+.professional-tab-button {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.professional-tab-button:hover {
+  color: #333;
+  background: #f8f9fa;
+}
+
+.professional-tab-button.active {
+  color: #555;
+  border-bottom-color: #555;
+}
+
+.professional-tab-content {
+  padding-top: 1rem;
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
 }
 
 /* Form controls in edit panel */
@@ -205,4 +286,43 @@
 
 .empty-text {
   color: #666;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #043161;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.properties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.property-item {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+}
+
+.property-item.historical {
+  opacity: 0.7;
+}
+
+.property-details {
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.completed-badge {
+  color: #28a745;
+  font-weight: 500;
+  margin-left: 0.5rem;
 }

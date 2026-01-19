@@ -13,6 +13,7 @@ import "./Overview.css";
 function Overview({ 
   clients = [], 
   properties = [], 
+  professionals = [],
   salesProgressions = [],
   updateClientStatus,
   createNewSalesProgression,
@@ -1023,6 +1024,24 @@ function Overview({
     }
   };
 
+  // Calculate counts for dynamic height
+  const searchingClients = clients
+    .filter(c => !c.archived && c.favourite);
+  const hotProperties = properties
+    .filter(p => !p.archived && p.favourite);
+  
+  const clientsCount = searchingClients.length;
+  const propertiesCount = hotProperties.length;
+  // Max between the two, capped at 7
+  const maxItems = Math.min(7, Math.max(clientsCount, propertiesCount));
+  
+  // Calculate height: maxItems * (tile height + padding + gap) + header height
+  // Each tile: 40px (min-height) + 0.75rem * 2 (padding) + 0.5rem (gap) = 40px + 1.5rem + 0.5rem
+  // Header: 36px
+  const tileHeight = maxItems > 0 
+    ? `calc(${maxItems} * (40px + 0.75rem * 2 + 0.5rem) + 36px)`
+    : 'auto';
+
   return (
     <div className="overview-page">
       <div className="overview-inner">
@@ -1051,9 +1070,7 @@ function Overview({
               />
             </h3>
             {!clientsSearchingCollapsed && (() => {
-              const searchingClients = clients
-                // Show all favourited, non-archived clients in the Active Clients tile
-                .filter(c => !c.archived && c.favourite)
+              const sortedClients = searchingClients
                 .sort((a, b) => {
                   // Favourited items first
                   if (a.favourite && !b.favourite) return -1;
@@ -1072,10 +1089,18 @@ function Overview({
                 }
                 return client.name || "Unknown";
               };
-              return searchingClients.length === 0 ? (
+              return sortedClients.length === 0 ? (
                 <div className="empty-row">No favourited clients</div>
               ) : (
-                <div className="clients-tiles-container overview-tiles-scrollable" style={{ "--grid-cols": "50px 2fr 1.2fr 1.2fr 50px" }}>
+                <div 
+                  className="clients-tiles-container overview-tiles-scrollable" 
+                  style={{ 
+                    "--grid-cols": "50px 2fr 1.2fr 1.2fr 50px",
+                    minHeight: tileHeight,
+                    maxHeight: clientsCount > 7 ? tileHeight : 'none',
+                    overflowY: clientsCount > 7 ? 'auto' : 'visible'
+                  }}
+                >
                   <div className="clients-table-header-row">
                     <div className="client-tile-column-header"></div>
                     <div className="client-tile-column-header">Name</div>
@@ -1083,7 +1108,7 @@ function Overview({
                     <div className="client-tile-column-header">Phone</div>
                     <div className="client-tile-column-header"></div>
                   </div>
-                  {searchingClients.map((client) => (
+                  {sortedClients.map((client) => (
                     <div
                       key={client.id || client.name}
                       className="client-tile clickable-row"
@@ -1144,18 +1169,25 @@ function Overview({
               />
             </h3>
             {!propertiesOffMarketCollapsed && (() => {
-              const hotProperties = properties
-                .filter(p => !p.archived && p.favourite)
+              const sortedProperties = hotProperties
                 .sort((a, b) => {
                   // Favourited items first
                   if (a.favourite && !b.favourite) return -1;
                   if (!a.favourite && b.favourite) return 1;
                   return 0;
                 });
-              return hotProperties.length === 0 ? (
+              return sortedProperties.length === 0 ? (
                 <div className="empty-row">No favourited properties</div>
               ) : (
-                <div className="properties-tiles-container overview-tiles-scrollable" style={{ "--grid-cols": "50px 1.5fr 1.2fr 1fr 50px" }}>
+                <div 
+                  className="properties-tiles-container overview-tiles-scrollable" 
+                  style={{ 
+                    "--grid-cols": "50px 1.5fr 1.2fr 1fr 50px",
+                    minHeight: tileHeight,
+                    maxHeight: propertiesCount > 7 ? tileHeight : 'none',
+                    overflowY: propertiesCount > 7 ? 'auto' : 'visible'
+                  }}
+                >
                   <div className="properties-table-header-row">
                     <div className="property-tile-column-header"></div>
                     <div className="property-tile-column-header">Name</div>
@@ -1163,7 +1195,7 @@ function Overview({
                     <div className="property-tile-column-header">Status</div>
                     <div className="property-tile-column-header"></div>
                   </div>
-                  {hotProperties.map((property) => (
+                  {sortedProperties.map((property) => (
                     <div
                       key={property.id || property.name}
                       className="property-tile clickable-row"
@@ -1350,14 +1382,17 @@ function Overview({
                         );
                       };
 
-                      // For offers, notes, and fallenThrough, show clientName and propertyName if available
-                      // When both clientName and propertyName are set, always show both regardless of which page we're viewing
-                      const displayClientName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note") && activity.clientName 
+                      // For offers, notes, phone calls, and fallenThrough, show clientName, propertyName, and professionalName if available
+                      // When these fields are set, always show them regardless of which page we're viewing
+                      const displayClientName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note" || activity.type === "phoneCall") && activity.clientName 
                         ? activity.clientName 
                         : (isClient ? activity.entityName : null);
-                      const displayPropertyName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note") && activity.propertyName 
+                      const displayPropertyName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note" || activity.type === "phoneCall") && activity.propertyName 
                         ? activity.propertyName 
                         : (isProperty ? activity.entityName : null);
+                      const displayProfessionalName = (activity.type === "note" || activity.type === "phoneCall") && activity.professionalName
+                        ? activity.professionalName
+                        : (activity.entityType === "professional" ? activity.entityName : null);
 
                       // Check if this pending offer has been acted upon (has a subsequent Accepted/Rejected/Cancelled entry)
                       const hasBeenActedUpon = activity.type === "offer" && activity.status === "Pending" && 
@@ -1525,6 +1560,24 @@ function Overview({
                                     }}
                                   >
                                     {displayPropertyName}
+                                  </button>
+                                </div>
+                              )}
+                              {displayProfessionalName && (
+                                <div className="activity-tile-field">
+                                  <span className="activity-tile-label">Professional:</span>
+                                  <button
+                                    type="button"
+                                    className="activity-entity-pill"
+                                    onClick={() => {
+                                      window.dispatchEvent(
+                                        new CustomEvent("openClientByName", {
+                                          detail: { name: displayProfessionalName },
+                                        })
+                                      );
+                                    }}
+                                  >
+                                    {displayProfessionalName}
                                   </button>
                                 </div>
                               )}
@@ -2194,7 +2247,8 @@ function Overview({
         onClose={() => setShowLogNoteModal(false)}
         clients={clients}
         properties={properties}
-        onSave={async ({ client, property, note, timestamp }) => {
+        professionals={professionals}
+        onSave={async ({ client, property, professional, note, timestamp }) => {
           const { updateClientById } = await import("../lib/clientsApi");
           const { updatePropertyById } = await import("../lib/propertiesApi");
           
@@ -2227,12 +2281,25 @@ function Overview({
             timestamp: timestamp,
           };
 
+          // Always include professionalName if professional is selected
+          if (professional) {
+            activityLogEntry.professionalName = professional.name;
+          }
+
           // Determine entityType and entityName based on what's selected
           if (client && property) {
             // Both selected - use primary entity as client, but include both in the log
             activityLogEntry.entityType = "client";
             activityLogEntry.entityName = client.name;
             activityLogEntry.clientName = client.name;
+            activityLogEntry.propertyName = property.name;
+          } else if (client && professional) {
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+          } else if (property && professional) {
+            activityLogEntry.entityType = "property";
+            activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
           } else if (client) {
             activityLogEntry.entityType = "client";
@@ -2242,6 +2309,9 @@ function Overview({
             activityLogEntry.entityType = "property";
             activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
+          } else if (professional) {
+            activityLogEntry.entityType = "professional";
+            activityLogEntry.entityName = professional.name;
           }
 
           await logActivity(activityLogEntry);
@@ -2254,8 +2324,9 @@ function Overview({
         onClose={() => setShowPhoneCallModal(false)}
         clients={clients}
         properties={properties}
+        professionals={professionals}
         title="Add Phone Call"
-        onSave={async ({ client, property, note, timestamp }) => {
+        onSave={async ({ client, property, professional, note, timestamp }) => {
           const { updateClientById } = await import("../lib/clientsApi");
           const { updatePropertyById } = await import("../lib/propertiesApi");
           
@@ -2288,12 +2359,25 @@ function Overview({
             timestamp: timestamp,
           };
 
+          // Always include professionalName if professional is selected
+          if (professional) {
+            activityLogEntry.professionalName = professional.name;
+          }
+
           // Determine entityType and entityName based on what's selected
           if (client && property) {
             // Both selected - use primary entity as client, but include both in the log
             activityLogEntry.entityType = "client";
             activityLogEntry.entityName = client.name;
             activityLogEntry.clientName = client.name;
+            activityLogEntry.propertyName = property.name;
+          } else if (client && professional) {
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+          } else if (property && professional) {
+            activityLogEntry.entityType = "property";
+            activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
           } else if (client) {
             activityLogEntry.entityType = "client";
@@ -2303,6 +2387,9 @@ function Overview({
             activityLogEntry.entityType = "property";
             activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
+          } else if (professional) {
+            activityLogEntry.entityType = "professional";
+            activityLogEntry.entityName = professional.name;
           }
 
           await logActivity(activityLogEntry);

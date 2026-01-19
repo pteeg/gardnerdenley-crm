@@ -9,11 +9,12 @@ import LogNoteModal from "./LogNoteModal";
  * Re-usable activity log scoped to a single entity (client/professional or property).
  *
  * Props:
- * - entityType: "client" | "property"
+ * - entityType: "client" | "property" | "professional"
  * - entityName: string
  * - title: optional string for the tile header (defaults to "Activity")
  * - clients: optional array of clients (for offer actions)
  * - properties: optional array of properties (for offer actions)
+ * - professionals: optional array of professionals
  * - onAcceptOffer: optional callback(clientName, propertyName, amount)
  * - onDeclineOffer: optional callback(clientName, propertyName)
  * - onCreateSalesProgression: optional callback(clientName, propertyName)
@@ -27,6 +28,7 @@ function EntityActivityLog({
   title = "Activity",
   clients = [],
   properties = [],
+  professionals = [],
   onAcceptOffer,
   onDeclineOffer,
   onCreateSalesProgression,
@@ -122,15 +124,21 @@ function EntityActivityLog({
     });
   };
 
-  // Filter activities - for offers, notes, and fallenThrough with clientName/propertyName, check those fields too
+  // Filter activities - for offers, notes, and fallenThrough with clientName/propertyName/professionalName, check those fields too
   const filtered = activities.filter((activity) => {
-    // For activities with both clientName and propertyName, show if either matches
+    // For activities with clientName, propertyName, or professionalName, show if the relevant field matches
     if (activity.clientName && activity.propertyName) {
       if (entityType === "client") {
         return activity.clientName === entityName;
       }
       if (entityType === "property") {
         return activity.propertyName === entityName;
+      }
+    }
+    // For activities with professionalName, show if professional matches
+    if (activity.professionalName) {
+      if (entityType === "professional") {
+        return activity.professionalName === entityName;
       }
     }
     // Default filtering
@@ -198,6 +206,19 @@ function EntityActivityLog({
       await deleteActivityLog(activity.id);
     }
 
+    setOpenMenuId(null);
+  };
+
+  const handleEditNote = (activity) => {
+    setEditingNote({
+      noteText: activity.details || "",
+      timestamp: activity.timestamp,
+      activityId: activity.id,
+      clientName: activity.clientName,
+      propertyName: activity.propertyName,
+      professionalName: activity.professionalName
+    });
+    setShowEditNoteModal(true);
     setOpenMenuId(null);
   };
 
@@ -1019,14 +1040,17 @@ function EntityActivityLog({
                   );
                 };
 
-                // For offers, notes, and fallenThrough, show clientName and propertyName if available
-                // When both clientName and propertyName are set, always show both regardless of which page we're viewing
-                const displayClientName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note") && activity.clientName 
+                // For offers, notes, and fallenThrough, show clientName, propertyName, and professionalName if available
+                // When clientName, propertyName, or professionalName are set, always show them regardless of which page we're viewing
+                const displayClientName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note" || activity.type === "phoneCall") && activity.clientName 
                   ? activity.clientName 
                   : (isClient ? activity.entityName : null);
-                const displayPropertyName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note") && activity.propertyName 
+                const displayPropertyName = (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note" || activity.type === "phoneCall") && activity.propertyName 
                   ? activity.propertyName 
                   : (isProperty ? activity.entityName : null);
+                const displayProfessionalName = (activity.type === "note" || activity.type === "phoneCall") && activity.professionalName 
+                  ? activity.professionalName 
+                  : (activity.entityType === "professional" ? activity.entityName : null);
 
                 // Check if this pending offer has been acted upon (has a subsequent Accepted/Rejected/Cancelled entry)
                 const hasBeenActedUpon = activity.type === "offer" && activity.status === "Pending" && 
@@ -1185,7 +1209,7 @@ function EntityActivityLog({
                             <div className="activity-tile-row">
                               {displayClientName && (
                                 <div className="activity-tile-field">
-                                  <span className="activity-tile-label">Contact:</span>
+                                  <span className="activity-tile-label">Client:</span>
                                   <button
                                     type="button"
                                     className="activity-entity-pill"
@@ -1216,6 +1240,24 @@ function EntityActivityLog({
                                     }}
                                   >
                                     {displayPropertyName}
+                                  </button>
+                                </div>
+                              )}
+                              {displayProfessionalName && (
+                                <div className="activity-tile-field">
+                                  <span className="activity-tile-label">Professional:</span>
+                                  <button
+                                    type="button"
+                                    className="activity-entity-pill"
+                                    onClick={() => {
+                                      window.dispatchEvent(
+                                        new CustomEvent("openClientByName", {
+                                          detail: { name: displayProfessionalName },
+                                        })
+                                      );
+                                    }}
+                                  >
+                                    {displayProfessionalName}
                                   </button>
                                 </div>
                               )}
@@ -1449,9 +1491,10 @@ function EntityActivityLog({
         }}
         clients={clients}
         properties={properties}
+        professionals={professionals}
         title="Edit Note"
         editingNote={editingNote}
-        onSave={async ({ client, property, note, timestamp, isEdit, activityId, originalTimestamp }) => {
+        onSave={async ({ client, property, professional, note, timestamp, isEdit, activityId, originalTimestamp }) => {
           if (!isEdit) return;
           
           const { updateClientById } = await import("./lib/clientsApi");
@@ -1491,10 +1534,29 @@ function EntityActivityLog({
 
           // Update the activity log entry
           if (activityId) {
-            await updateActivityLog(activityId, {
+            const updateData = {
               details: note,
               timestamp: timestamp
-            });
+            };
+            // Update professionalName if professional is selected
+            if (professional) {
+              updateData.professionalName = professional.name;
+            } else if (editingNote?.professionalName) {
+              // Preserve professionalName if it was in the original activity and not being changed
+              updateData.professionalName = editingNote.professionalName;
+            }
+            // Update clientName and propertyName if changed
+            if (client) {
+              updateData.clientName = client.name;
+            } else if (editingNote?.clientName) {
+              updateData.clientName = editingNote.clientName;
+            }
+            if (property) {
+              updateData.propertyName = property.name;
+            } else if (editingNote?.propertyName) {
+              updateData.propertyName = editingNote.propertyName;
+            }
+            await updateActivityLog(activityId, updateData);
           }
 
           setShowEditNoteModal(false);

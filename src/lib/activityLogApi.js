@@ -25,13 +25,16 @@ export async function logActivity(activity) {
     createdAt: Date.now(),
   };
   
-  // For offers, fallenThrough, notes, and phoneCall, support both clientName and propertyName for filtering
+  // For offers, fallenThrough, notes, and phoneCall, support clientName, propertyName, and professionalName for filtering
   if (activity.type === "offer" || activity.type === "fallenThrough" || activity.type === "note" || activity.type === "phoneCall") {
     if (activity.clientName) {
       logEntry.clientName = activity.clientName;
     }
     if (activity.propertyName) {
       logEntry.propertyName = activity.propertyName;
+    }
+    if (activity.professionalName) {
+      logEntry.professionalName = activity.professionalName;
     }
   }
   

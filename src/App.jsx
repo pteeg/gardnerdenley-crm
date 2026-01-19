@@ -50,7 +50,7 @@ function AppContent({ logout }) {
     window.addEventListener("resize", reposition);
     return () => window.removeEventListener("resize", reposition);
   }, [activeTab]);
-  const tabs = ["Home", "Contacts", "Properties", "Sales Progression", "Revenue"];
+  const tabs = ["Home", "Contacts", "Properties", "Sales Progression", "Wonga Report"];
 
   // Check screen width for responsive navigation
   useEffect(() => {
@@ -560,6 +560,7 @@ function AppContent({ logout }) {
           <Overview
             clients={clients}
             properties={properties}
+            professionals={professionals}
             salesProgressions={salesProgressions}
             updateClientStatus={updateClientStatus}
             createNewSalesProgression={createNewSalesProgression}
@@ -718,9 +719,10 @@ function AppContent({ logout }) {
         onClose={() => setShowLogNoteModal(false)}
         clients={clients}
         properties={properties}
+        professionals={professionals}
         preSelectedClient={currentSelectedClient}
         preSelectedProperty={currentSelectedProperty}
-        onSave={async ({ client, property, note, timestamp }) => {
+        onSave={async ({ client, property, professional, note, timestamp }) => {
           const { updateClientById } = await import("./lib/clientsApi");
           const { updatePropertyById } = await import("./lib/propertiesApi");
           
@@ -746,12 +748,17 @@ function AppContent({ logout }) {
             }
           }
 
-          // Log to activity log - single entry with both client and property if both are selected
+          // Log to activity log - single entry with all linked entities
           const activityLogEntry = {
             type: "note",
             details: note,
             timestamp: timestamp,
           };
+
+          // Always include professionalName if professional is selected
+          if (professional) {
+            activityLogEntry.professionalName = professional.name;
+          }
 
           // Determine entityType and entityName based on what's selected
           if (client && property) {
@@ -759,6 +766,14 @@ function AppContent({ logout }) {
             activityLogEntry.entityType = "client";
             activityLogEntry.entityName = client.name;
             activityLogEntry.clientName = client.name;
+            activityLogEntry.propertyName = property.name;
+          } else if (client && professional) {
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+          } else if (property && professional) {
+            activityLogEntry.entityType = "property";
+            activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
           } else if (client) {
             activityLogEntry.entityType = "client";
@@ -768,6 +783,9 @@ function AppContent({ logout }) {
             activityLogEntry.entityType = "property";
             activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
+          } else if (professional) {
+            activityLogEntry.entityType = "professional";
+            activityLogEntry.entityName = professional.name;
           }
 
           await logActivity(activityLogEntry);
@@ -780,10 +798,11 @@ function AppContent({ logout }) {
         onClose={() => setShowPhoneCallModal(false)}
         clients={clients}
         properties={properties}
+        professionals={professionals}
         preSelectedClient={currentSelectedClient}
         preSelectedProperty={currentSelectedProperty}
         title="Add Phone Call"
-        onSave={async ({ client, property, note, timestamp }) => {
+        onSave={async ({ client, property, professional, note, timestamp }) => {
           const { updateClientById } = await import("./lib/clientsApi");
           const { updatePropertyById } = await import("./lib/propertiesApi");
           
@@ -816,12 +835,25 @@ function AppContent({ logout }) {
             timestamp: timestamp,
           };
 
+          // Always include professionalName if professional is selected
+          if (professional) {
+            activityLogEntry.professionalName = professional.name;
+          }
+
           // Determine entityType and entityName based on what's selected
           if (client && property) {
             // Both selected - use primary entity as client, but include both in the log
             activityLogEntry.entityType = "client";
             activityLogEntry.entityName = client.name;
             activityLogEntry.clientName = client.name;
+            activityLogEntry.propertyName = property.name;
+          } else if (client && professional) {
+            activityLogEntry.entityType = "client";
+            activityLogEntry.entityName = client.name;
+            activityLogEntry.clientName = client.name;
+          } else if (property && professional) {
+            activityLogEntry.entityType = "property";
+            activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
           } else if (client) {
             activityLogEntry.entityType = "client";
@@ -831,6 +863,9 @@ function AppContent({ logout }) {
             activityLogEntry.entityType = "property";
             activityLogEntry.entityName = property.name;
             activityLogEntry.propertyName = property.name;
+          } else if (professional) {
+            activityLogEntry.entityType = "professional";
+            activityLogEntry.entityName = professional.name;
           }
 
           await logActivity(activityLogEntry);
