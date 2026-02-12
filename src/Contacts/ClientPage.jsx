@@ -6,7 +6,7 @@ import NewPropertyModal from "../Properties/NewPropertyModal";
 import { logActivity } from "../lib/activityLogApi";
 import EntityActivityLog from "../EntityActivityLog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPhone, faAt, faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
+import { faPhone, faAt, faPen, faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
 
 function ClientPage({
@@ -26,7 +26,8 @@ function ClientPage({
   handleAcceptOffer,
   onArchiveClient,
   onDeleteClient,
-  professionals
+  professionals,
+  onOpenEmailWithTemplate,
 }) {
   const formatClientNameFromClient = (c) => {
     if (!c) return "";
@@ -359,10 +360,17 @@ function ClientPage({
                     <button
                       type="button"
                       onClick={(e) => {
-                        e.stopPropagation();
-                        if (client.email) {
-                          window.location.href = `mailto:${client.email}`;
-                        }
+                    e.stopPropagation();
+                    if (client.email) {
+                      if (onOpenEmailWithTemplate) {
+                        onOpenEmailWithTemplate({
+                          email: client.email,
+                          name: formatPrimaryDisplayName(),
+                        });
+                      } else {
+                        window.location.href = `mailto:${client.email}`;
+                      }
+                    }
                       }}
                       onMouseEnter={() => setShowEmailTooltip(true)}
                       onMouseLeave={() => setShowEmailTooltip(false)}
@@ -473,24 +481,6 @@ function ClientPage({
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Row: Contact Type */}
-                <div style={{ marginTop: '1.1rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <span style={{ color: '#555', fontWeight: 400 }}>Contact Type: </span>
-                  {Array.isArray(client.types) && client.types.length > 0 ? (
-                    client.types.map((t, idx) => (
-                      <span
-                        key={idx}
-                        className="status-badge"
-                        style={{ background: '#eef5ff', color: '#2b6cb0', borderColor: '#b3d0ff' }}
-                      >
-                        {t}
-                      </span>
-                    ))
-                  ) : (
-                    <span style={{ fontWeight: 500 }}>Not specified</span>
-                  )}
                 </div>
 
                 {/* Row: Status (just above Budget) */}
@@ -619,22 +609,14 @@ function ClientPage({
                         <span style={{ fontWeight: 600, color: '#333' }}>Brief</span>
                         <button
                           type="button"
-                          style={{ 
-                            padding: '0.25rem 0.6rem', 
-                            fontSize: '0.8rem',
-                            background: '#f3f4f6',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            color: '#333',
-                            fontWeight: 500
-                          }}
+                          className="brief-edit-button"
                           onClick={() => {
                             setBriefText(client.brief || "");
                             setShowBriefModal(true);
                           }}
                         >
-                          Edit
+                          <FontAwesomeIcon icon={faPen} style={{ width: 12, height: 12 }} />
+                          <span>Edit</span>
                         </button>
                       </div>
                       <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#333' }}>
@@ -645,6 +627,29 @@ function ClientPage({
                   {activeTab === "searchDetails" && (
                     <div>
                       <div className="search-info">
+                        <div className="search-item">
+                          <span className="search-label">Contact Type</span>
+                          <span className="search-value">
+                            {Array.isArray(client.types) && client.types.length > 0 ? (
+                              client.types.map((t, idx) => (
+                                <span
+                                  key={idx}
+                                  className="status-badge"
+                                  style={{
+                                    background: "#eef5ff",
+                                    color: "#2b6cb0",
+                                    border: "1px solid #b3d0ff",
+                                    marginRight: "0.3rem",
+                                  }}
+                                >
+                                  {t}
+                                </span>
+                              ))
+                            ) : (
+                              "Not specified"
+                            )}
+                          </span>
+                        </div>
                         <div className="search-item">
                           <span className="search-label">Search Start Date</span>
                           <span className="search-value">{client.searchStartDate || "Not specified"}</span>

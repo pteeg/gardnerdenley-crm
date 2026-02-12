@@ -8,6 +8,7 @@ import "./Contacts.css";
 import Sidebar from "../Sidebar";
 import AddClientForm from "./AddClientForm";
 import { createClient } from "../lib/clientsApi";
+import EmailTemplatePickerModal from "./EmailTemplatePickerModal";
 
 function Contacts({
   professionals,
@@ -36,6 +37,7 @@ function Contacts({
   const [showArchivedProfessionals, setShowArchivedProfessionals] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [templateEmailRecipient, setTemplateEmailRecipient] = useState(null);
 
   // Helper to format a client's display name like elsewhere in the app
   const formatClientName = (c) => {
@@ -134,6 +136,12 @@ function Contacts({
         });
       }
     }
+  };
+
+  const handleOpenEmailTemplatesForClient = (client) => {
+    if (!client?.email) return;
+    const name = formatClientName(client) || client.email;
+    setTemplateEmailRecipient({ email: client.email, name });
   };
 
   const handleRestoreClient = async (clientToRestore) => {
@@ -479,6 +487,7 @@ function Contacts({
               onRestore={handleRestoreClient}
               showArchived={showArchived}
               onRowClick={(client) => setSelectedClient(client)}
+              onEmailClick={handleOpenEmailTemplatesForClient}
             />
             {showForm && (
               <AddClientForm
@@ -493,7 +502,7 @@ function Contacts({
           </>
         )}
 
-        {subPage === "Clients" && selectedClient && (
+      {subPage === "Clients" && selectedClient && (
           <ClientPage
             client={selectedClient}
             updateClientStatus={updateClientStatus}
@@ -538,6 +547,7 @@ function Contacts({
             updateClientInfo={updateClientInfo}
             onArchiveClient={handleArchiveClient}
             onDeleteClient={handleDeleteClient}
+            onOpenEmailWithTemplate={handleOpenEmailTemplatesForClient}
             professionals={professionals}
           />
         )}
@@ -580,6 +590,14 @@ function Contacts({
           />
         )}
       </div>
+
+      {templateEmailRecipient && (
+        <EmailTemplatePickerModal
+          isOpen={!!templateEmailRecipient}
+          recipient={templateEmailRecipient}
+          onClose={() => setTemplateEmailRecipient(null)}
+        />
+      )}
     </div>
   );
 }

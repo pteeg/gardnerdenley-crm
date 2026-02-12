@@ -26,7 +26,8 @@ function ClientsTable({
   onRestore, 
   showArchived, 
   onRowClick,
-  favouritesOnly: favouritesOnlyProp
+  favouritesOnly: favouritesOnlyProp,
+  onEmailClick,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFavouritesOnly, setShowFavouritesOnly] = useState(Boolean(favouritesOnlyProp));
@@ -195,7 +196,11 @@ function ClientsTable({
                   onClick={(e) => {
                     e.stopPropagation();
                     if (client.email) {
-                      window.location.href = `mailto:${client.email}`;
+                      if (onEmailClick) {
+                        onEmailClick(client);
+                      } else {
+                        window.location.href = `mailto:${client.email}`;
+                      }
                     }
                   }}
                   className="client-contact-icon"

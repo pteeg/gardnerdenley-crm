@@ -36,6 +36,71 @@ const SalesProgression = ({
   onRemoveRow,
   properties = []
 }) => {
+  const progressionSteps = [
+    { key: "contractSent", label: "Send Contract" },
+    { key: "contractSigned", label: "Sign Contract" },
+    { key: "clientIdDocument", label: "Client ID" },
+    { key: "aml", label: "AML" },
+    { key: "solicitorRecommended", label: "Recommend Solicitor" },
+    { key: "solicitorEngaged", label: "Engage Solicitor" },
+    { key: "mortgageAdvisorRecommended", label: "Recommend Mortgage Advisor" },
+    { key: "mortgageValBooked", label: "Book Mortgage Valuation" },
+    { key: "mortgageOfferReceived", label: "Receive Mortgage Offer" },
+    { key: "surveyorRecommended", label: "Recommend Surveyor" },
+    { key: "surveyBooked", label: "Book Survey" },
+    { key: "sdltAdvisorRecommended", label: "Recommend SDLT Advisor" },
+    { key: "targetExchangeDate", label: "Set Target Exchange Date" },
+    { key: "targetCompletionDate", label: "Set Target Completion Date" },
+    { key: "removalsRecommended", label: "Recommend Removals" },
+    { key: "removalsBooked", label: "Book Removals" },
+    { key: "exchangeDateSet", label: "Set Exchange Date" },
+    { key: "completionDateSet", label: "Set Completion Date" },
+    { key: "paymentExpected", label: "Set Payment Expected Date" },
+    { key: "invoiceSent", label: "Send Invoice" },
+    { key: "invoicePaid", label: "Invoice Paid" },
+  ];
+
+  const getNextStepLabel = (row) => {
+    if (!row) return "";
+    for (const step of progressionSteps) {
+      const value = row[step.key];
+      if (!value || value === "Not Done" || value === "Pending") {
+        return step.label;
+      }
+    }
+    return "All steps complete";
+  };
+
+  const formatNiceDate = (value) => {
+    if (!value) return "";
+    const date = typeof value === "number" ? new Date(value) : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    if (amount === undefined || amount === null || amount === "") return "";
+    const numeric = Number(amount);
+    if (Number.isNaN(numeric)) return "";
+    return `£${numeric.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+  };
+
+  const getProgressPercent = (row) => {
+    if (!row || progressionSteps.length === 0) return 0;
+    let done = 0;
+    progressionSteps.forEach((step) => {
+      const value = row[step.key];
+      if (value && value !== "Not Done" && value !== "Pending") {
+        done += 1;
+      }
+    });
+    return Math.round((done / progressionSteps.length) * 100);
+  };
+
   // Local fallback if no professionals passed from parent
   const [localProfessionals, setLocalProfessionals] = useState(initialProfessionals);
 
@@ -58,34 +123,106 @@ const SalesProgression = ({
     return () => unsubscribe();
   }, []);
 
+  const findClientByDisplayName = (clientName) => {
+    if (!clientName) return null;
+    return (
+      clients.find((c) => {
+        const storedName = c.name || "";
+        // Primary: exact or "short form" vs "full form" match on stored name
+        if (storedName === clientName) return true;
+        if (storedName.startsWith(`${clientName} `)) return true;
+
+        // Derive display name the same way Contacts/ClientsTable does
+        let formatted = "";
+        if (c.spouse1FirstName && c.spouse2FirstName) {
+          formatted = c.spouse1Surname
+            ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+            : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+        } else if (c.spouse1FirstName || c.spouse1Surname) {
+          const first = c.spouse1FirstName || "";
+          const surname = c.spouse1Surname || "";
+          formatted = [first, surname].filter(Boolean).join(" ");
+        } else {
+          formatted = storedName;
+        }
+
+        if (!formatted) return false;
+        if (formatted === clientName) return true;
+        // If the formatted name includes the surname and the progression only stored first names,
+        // e.g. "Simon and Sarah Gardner" vs "Simon and Sarah"
+        if (formatted.startsWith(`${clientName} `)) return true;
+
+        return false;
+      }) || null
+    );
+  };
+
+  const formatClientDisplayNameFromObject = (c) => {
+    if (!c) return "";
+    if (c.spouse1FirstName && c.spouse2FirstName) {
+      return c.spouse1Surname
+        ? `${c.spouse1FirstName} and ${c.spouse2FirstName} ${c.spouse1Surname}`
+        : `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
+    }
+    if (c.spouse1FirstName || c.spouse1Surname) {
+      const first = c.spouse1FirstName || "";
+      const surname = c.spouse1Surname || "";
+      return [first, surname].filter(Boolean).join(" ");
+    }
+    return c.name || "";
+  };
+
+  const getClientForProgressionRow = (row) => {
+    if (!row) return null;
+
+    // 1) Try to resolve via linked property, which stores client.name
+    const property = properties.find((p) => p.name === row.address);
+    if (property) {
+      if (Array.isArray(property.linkedClients) && property.linkedClients.length > 0) {
+        const linkedName = property.linkedClients[0];
+        const byLinked = clients.find((c) => c.name === linkedName);
+        if (byLinked) return byLinked;
+      } else if (property.linkedClient) {
+        const lc = property.linkedClient;
+        let linkedName = null;
+        if (typeof lc === "string") {
+          linkedName = lc;
+        } else if (lc && typeof lc === "object" && lc.name) {
+          linkedName = lc.name;
+        }
+        if (linkedName) {
+          const byLinked = clients.find((c) => c.name === linkedName);
+          if (byLinked) return byLinked;
+        }
+      }
+    }
+
+    // 2) Try match by Contacts-style display name vs row.client
+    const rowName = row.client || "";
+    const byDisplay = clients.find(
+      (c) => formatClientDisplayNameFromObject(c) === rowName
+    );
+    if (byDisplay) return byDisplay;
+
+    // 3) Fallback to flexible name matcher
+    return findClientByDisplayName(rowName);
+  };
+
+  const formatClientFullNameForProgression = (row) => {
+    const client = getClientForProgressionRow(row);
+    if (client) return formatClientDisplayNameFromObject(client);
+    // Fallback to existing behaviour if we truly can't resolve
+    return formatClientName(row?.client, clients);
+  };
+
   // Helper function to find accepted offer date for a deal
   const getAcceptedOfferDate = (deal) => {
     // Find the client name (might be formatted)
     const clientName = deal.client;
     
     // Try to find matching client to get actual name
-    let actualClientName = clientName;
-    const client = clients.find(c => {
-      if (c.name === clientName) return true;
-      // Check formatted names
-      if (c.spouse1FirstName && c.spouse2FirstName) {
-        const bothFirstNames = `${c.spouse1FirstName} and ${c.spouse2FirstName}`;
-        if (clientName === bothFirstNames || 
-            (c.spouse1Surname && clientName === `${bothFirstNames} ${c.spouse1Surname}`)) {
-          return true;
-        }
-      }
-      if (c.spouse1FirstName) {
-        const singleName = c.spouse1Surname 
-          ? `${c.spouse1FirstName} ${c.spouse1Surname}` 
-          : c.spouse1FirstName;
-        if (clientName === singleName) return true;
-      }
-      return false;
-    });
-    if (client) {
-      actualClientName = client.name;
-    }
+    const client = findClientByDisplayName(clientName);
+    const actualClientName = client ? client.name : clientName;
 
     // Find the accepted offer activity for this client and property
     // Check for "Accepted", "Client Accepted", or "Vendor Accepted" statuses
@@ -388,6 +525,19 @@ const SalesProgression = ({
   // View scope: 'active' | 'completed' | 'fallen'
   const [viewScope, setViewScope] = useState('active');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [viewMode, setViewMode] = useState("overview"); // 'full' | 'overview'
+  const [detailRowIndex, setDetailRowIndex] = useState(null);
+  const [detailTab, setDetailTab] = useState("overview"); // 'overview' | 'aml'
+
+  const currentRows = viewScope === "fallen"
+    ? fallenDeals
+    : (showCompleted ? completedDeals : activeDeals);
+
+  const detailRow =
+    detailRowIndex !== null && currentRows[detailRowIndex]
+      ? currentRows[detailRowIndex]
+      : null;
+  const detailProgressPercent = getProgressPercent(detailRow);
 
   return (
     <div className="sales-progression">
@@ -413,12 +563,600 @@ const SalesProgression = ({
           <h2 className="sp-subtitle">
             {viewScope === 'fallen' ? 'Archived' : (showCompleted ? 'Completed Deals' : 'Active Deals')}
           </h2>
-          {((viewScope === 'fallen' ? fallenDeals : (showCompleted ? completedDeals : activeDeals)).length === 0) ? (
+          {viewScope !== 'fallen' && (
+            <div className="sp-view-toggle">
+              <button
+                type="button"
+                className={viewMode === "overview" ? "sp-view-toggle-btn active" : "sp-view-toggle-btn"}
+                onClick={() => setViewMode("overview")}
+              >
+                Simplified View (test)
+              </button>
+              <button
+                type="button"
+                className={viewMode === "full" ? "sp-view-toggle-btn active" : "sp-view-toggle-btn"}
+                onClick={() => setViewMode("full")}
+              >
+                Full table
+              </button>
+            </div>
+          )}
+          {(currentRows.length === 0) ? (
             <div style={{ padding: '1rem', color: '#555555', fontFamily: 'sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '240px', textAlign: 'center', width: '100%' }}>
               {viewScope === 'fallen' ? 'No Fallen Through Deals' : (showCompleted ? 'No Completed Deals in Progression' : 'No Active Deals in Progression. Relax 😎')}
             </div>
           ) : (
           <>
+          {viewScope !== "fallen" && viewMode === "overview" && detailRow ? (
+            <div className="sp-detail-page">
+              <button
+                type="button"
+                className="sp-detail-back-btn"
+                onClick={() => setDetailRowIndex(null)}
+              >
+                ← Back to Simplified View
+              </button>
+
+              <div className="sp-detail-summary">
+                <div className="sp-detail-summary-main">
+                  <div className="sp-detail-summary-client">
+                    {formatClientFullNameForProgression(detailRow)}
+                  </div>
+                  <button
+                    type="button"
+                    className="sp-overview-ellipsis-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setClientMenuPosition({ top: rect.bottom + 6, left: rect.left });
+                      setOpenClientMenuRow(
+                        openClientMenuRow === detailRowIndex ? null : detailRowIndex
+                      );
+                    }}
+                    aria-label="Client actions"
+                  >
+                    <span />
+                    <span />
+                    <span />
+                  </button>
+                </div>
+                <div className="sp-detail-summary-meta">
+                  <div className="sp-detail-summary-item">
+                    <span className="sp-detail-summary-label">Progress</span>
+                    <div className="sp-progress">
+                      <div className="sp-progress-bar">
+                        <div
+                          className="sp-progress-bar-fill"
+                          style={{ width: `${detailProgressPercent}%` }}
+                        />
+                      </div>
+                      <span className="sp-progress-text">
+                        {detailProgressPercent}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="sp-detail-summary-item">
+                    <span className="sp-detail-summary-label">Acquiring</span>
+                    <span className="sp-detail-summary-value">
+                      {detailRow.address || "No property set"}
+                    </span>
+                  </div>
+                  <div className="sp-detail-summary-item">
+                    <span className="sp-detail-summary-label">Price</span>
+                    <span className="sp-detail-summary-value">
+                      {(() => {
+                        const property = properties.find(
+                          (p) => p.name === detailRow.address
+                        );
+                        return property && property.offerAmount
+                          ? formatCurrency(property.offerAmount)
+                          : "Not set";
+                      })()}
+                    </span>
+                  </div>
+                  <div className="sp-detail-summary-item">
+                    <span className="sp-detail-summary-label">Offer accepted</span>
+                    <span className="sp-detail-summary-value">
+                      {(() => {
+                        const ts = getAcceptedOfferDate(detailRow);
+                        const label = ts ? formatNiceDate(ts) : "";
+                        return label || "Not found";
+                      })()}
+                    </span>
+                  </div>
+                  <div className="sp-detail-summary-item">
+                    <span className="sp-detail-summary-label">Est. exchange</span>
+                    <span className="sp-detail-summary-value">
+                      {detailRow.targetExchangeDate
+                        ? formatNiceDate(detailRow.targetExchangeDate)
+                        : "Not set"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sp-detail-tabs">
+                <button
+                  type="button"
+                  className={
+                    detailTab === "overview"
+                      ? "sp-detail-tab active"
+                      : "sp-detail-tab"
+                  }
+                  onClick={() => setDetailTab("overview")}
+                >
+                  Deal Overview
+                </button>
+                <button
+                  type="button"
+                  className={
+                    detailTab === "aml"
+                      ? "sp-detail-tab active"
+                      : "sp-detail-tab"
+                  }
+                  onClick={() => setDetailTab("aml")}
+                >
+                  AML
+                </button>
+              </div>
+
+              <div className="sp-detail-body">
+                {detailTab === "overview" && (
+                  <div className="sp-detail-steps">
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Send Contract</span>
+                      <StatusToggle
+                        value={detailRow.contractSent}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "contractSent", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Sign Contract</span>
+                      <StatusToggle
+                        value={detailRow.contractSigned}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "contractSigned", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Client ID</span>
+                      <StatusToggle
+                        value={detailRow.clientIdDocument || detailRow.id || "Not Done"}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "clientIdDocument", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">AML</span>
+                      <StatusToggle
+                        value={detailRow.aml}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "aml", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Recommend Solicitor</span>
+                      <StatusToggle
+                        value={detailRow.solicitorRecommended}
+                        onChange={(newValue) =>
+                          handleStatusChange(
+                            detailRowIndex,
+                            "solicitorRecommended",
+                            newValue
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Engage Solicitor</span>
+                      <StatusToggle
+                        value={detailRow.solicitorEngaged}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "solicitorEngaged", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">
+                        Mortgage Advisor Recommended
+                      </span>
+                      <StatusToggle
+                        value={detailRow.mortgageAdvisorRecommended}
+                        onChange={(newValue) =>
+                          handleStatusChange(
+                            detailRowIndex,
+                            "mortgageAdvisorRecommended",
+                            newValue
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Mortgage Valuation Booked</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "mortgageValBooked",
+                          detailRow.mortgageValBooked
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "mortgageValBooked",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "mortgageValBooked",
+                            detailRow.mortgageValBooked
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Mortgage Offer Received</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "mortgageOfferReceived",
+                          detailRow.mortgageOfferReceived
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "mortgageOfferReceived",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "mortgageOfferReceived",
+                            detailRow.mortgageOfferReceived
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Survey Booked</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "surveyBooked",
+                          detailRow.surveyBooked
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "surveyBooked",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "surveyBooked",
+                            detailRow.surveyBooked
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Target Exchange Date</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "targetExchangeDate",
+                          detailRow.targetExchangeDate
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "targetExchangeDate",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "targetExchangeDate",
+                            detailRow.targetExchangeDate
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Target Completion Date</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "targetCompletionDate",
+                          detailRow.targetCompletionDate
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "targetCompletionDate",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "targetCompletionDate",
+                            detailRow.targetCompletionDate
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Exchange Date Set</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "exchangeDateSet",
+                          detailRow.exchangeDateSet
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "exchangeDateSet",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "exchangeDateSet",
+                            detailRow.exchangeDateSet
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Completion Date Set</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "completionDateSet",
+                          detailRow.completionDateSet
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "completionDateSet",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "completionDateSet",
+                            detailRow.completionDateSet
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Invoice Sent</span>
+                      <StatusToggle
+                        value={detailRow.invoiceSent}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "invoiceSent", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Exchange</span>
+                      <StatusToggle
+                        value={detailRow.exchanged}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "exchanged", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Completed</span>
+                      <StatusToggle
+                        value={detailRow.completed || "Not Done"}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "completed", newValue)
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Payment Expected</span>
+                      <input
+                        type="date"
+                        value={getDateInputValue(
+                          detailRowIndex,
+                          "paymentExpected",
+                          detailRow.paymentExpected
+                        )}
+                        onChange={(e) =>
+                          handleDateTyping(
+                            detailRowIndex,
+                            "paymentExpected",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() =>
+                          handleDateBlur(
+                            detailRowIndex,
+                            "paymentExpected",
+                            detailRow.paymentExpected
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Fee %</span>
+                      <input
+                        type="text"
+                        value={
+                          detailRow.feePercent === "" ||
+                          detailRow.feePercent === undefined ||
+                          detailRow.feePercent === null
+                            ? ""
+                            : `${detailRow.feePercent}`
+                        }
+                        onChange={(e) =>
+                          handleFeePercentChange(detailRowIndex, e.target.value)
+                        }
+                        placeholder="1.5%"
+                      />
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Invoice Amount</span>
+                      <div className="currency-wrapper">
+                        <span className="currency-symbol">£</span>
+                        <input
+                          type="text"
+                          value={
+                            detailRow.invoiceAmount
+                              ? detailRow.invoiceAmount
+                                  .toString()
+                                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                              : ""
+                          }
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/,/g, "");
+                            if (!/^\d*$/.test(rawValue)) return;
+                            handleStatusChange(
+                              detailRowIndex,
+                              "invoiceAmount",
+                              rawValue === "" ? "" : Number(rawValue)
+                            );
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">Invoice Paid</span>
+                      <StatusToggle
+                        value={detailRow.invoicePaid}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "invoicePaid", newValue)
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+                {detailTab === "aml" && (
+                  <div className="sp-detail-steps">
+                    <div className="sp-detail-row">
+                      <span className="sp-detail-label">AML Status</span>
+                      <StatusToggle
+                        value={detailRow.aml}
+                        onChange={(newValue) =>
+                          handleStatusChange(detailRowIndex, "aml", newValue)
+                        }
+                      />
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "0.75rem",
+                        fontSize: "0.85rem",
+                        color: "#6b7280",
+                      }}
+                    >
+                      More AML details can be added here later.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : viewScope !== "fallen" && viewMode === "overview" ? (
+            <div className="sp-overview-list">
+              {currentRows.map((row, rowIndex) => {
+                const primaryName = formatClientFullNameForProgression(row);
+                const property = properties.find(p => p.name === row.address);
+                const agreedPrice = property && property.offerAmount
+                  ? formatCurrency(property.offerAmount)
+                  : "";
+                const acceptedTs = getAcceptedOfferDate(row);
+                const acceptedLabel = acceptedTs
+                  ? formatNiceDate(acceptedTs)
+                  : "";
+                const estimatedExchangeLabel = row.targetExchangeDate
+                  ? formatNiceDate(row.targetExchangeDate)
+                  : "";
+                const progressPercent = getProgressPercent(row);
+
+                return (
+                  <div
+                    key={rowIndex}
+                    className="sp-overview-row"
+                    onClick={() => {
+                      setDetailRowIndex(rowIndex);
+                      setDetailTab("overview");
+                    }}
+                  >
+                    <div className="sp-overview-main">
+                      <div className="sp-overview-client">
+                        {primaryName}
+                      </div>
+                    </div>
+                    <div className="sp-overview-meta">
+                      <div className="sp-overview-meta-item">
+                        <span className="sp-overview-meta-label">Progress</span>
+                        <div className="sp-progress">
+                          <div className="sp-progress-bar">
+                            <div
+                              className="sp-progress-bar-fill"
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                          <span className="sp-progress-text">
+                            {progressPercent}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="sp-overview-meta-item">
+                        <span className="sp-overview-meta-label">Acquiring</span>
+                        <span className="sp-overview-meta-value sp-overview-property">
+                          {row.address || "No property set"}
+                        </span>
+                      </div>
+                      <div className="sp-overview-meta-item">
+                        <span className="sp-overview-meta-label">Price</span>
+                        <span className="sp-overview-meta-value">
+                          {agreedPrice || "Not set"}
+                        </span>
+                      </div>
+                      <div className="sp-overview-meta-item">
+                        <span className="sp-overview-meta-label">Offer accepted</span>
+                        <span className="sp-overview-meta-value">
+                          {acceptedLabel || "Not found"}
+                        </span>
+                      </div>
+                      <div className="sp-overview-meta-item">
+                        <span className="sp-overview-meta-label">Est. exchange</span>
+                        <span className="sp-overview-meta-value">
+                          {estimatedExchangeLabel || "Not set"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div style={{ overflowX: "auto" }}>
             <div className="sales-progression-unified-grid" style={{ display: "grid", gridTemplateColumns: viewScope === 'fallen' ? "1fr" : "1fr", alignItems: "center", justifyItems: "start", minWidth: "max-content", padding: "1rem", fontFamily: "sans-serif", boxSizing: "border-box", gap: "1rem", rowGap: "1rem" }}>
               {/* Header Row */}
@@ -467,9 +1205,8 @@ const SalesProgression = ({
                     </>
                 )}
               </div>
-              
               {/* Tile Rows */}
-          {(viewScope === 'fallen' ? fallenDeals : (showCompleted ? completedDeals : activeDeals)).map((row, rowIndex) => (
+          {currentRows.map((row, rowIndex) => (
             <div key={rowIndex} className="activity-tile" style={{ display: "grid", gridTemplateColumns: viewScope === 'fallen' ? "50px 200px 200px 1fr" : "50px 200px 200px 150px 150px 150px 150px 150px 180px 180px 200px 180px 230px 200px 150px 150px 200px 230px 150px 180px 200px 200px 180px 200px 150px 150px 150px 150px 200px 120px 150px 120px", alignItems: "center", justifyItems: "start", minWidth: "max-content", padding: "1rem", margin: 0 }}>
                 <div className="sales-progression-tile-column" style={{ marginRight: "0", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {(viewScope === 'fallen' || !showCompleted) && (
@@ -840,10 +1577,10 @@ const SalesProgression = ({
           ))}
             </div>
           </div>
+          )}
           </>
           )}
           </div>
-        </div>
       {openClientMenuRow !== null && (
         <div
           style={{
@@ -1095,96 +1832,8 @@ const SalesProgression = ({
           </div>
         </div>
       )}
-      {showQuickNoteModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: 500 }}>
-            <h3>Notes — {quickNoteSource || 'General'}</h3>
-            <div className="notes-list" style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {(() => {
-                const clientObj = (Array.isArray(clients) ? clients : []).find(c => c.name === quickNoteClientName) || {};
-                const allNotes = Array.isArray(clientObj.notes) ? clientObj.notes : [];
-                const prefix = quickNoteSource ? `${quickNoteSource} — ` : '';
-                const filtered = allNotes.filter(n => (n?.text || '').startsWith(prefix));
-                if (filtered.length === 0) {
-                  return <span style={{ color: '#666', fontStyle: 'italic' }}>No notes yet</span>;
-                }
-                return filtered.map((n, idx) => {
-                  const content = (n.text || '').replace(prefix, '');
-                  return (
-                    <div key={idx} className="note-row">
-                      <span className="note-text">
-                        {new Date(n.date).toLocaleDateString()}: {content}
-                      </span>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-
-            {!showQuickNoteComposer ? (
-              <div className="modal-buttons">
-                <button className="save-btn" onClick={() => setShowQuickNoteComposer(true)}>+ New Note</button>
-                <button className="cancel-btn" onClick={() => { setShowQuickNoteModal(false); setQuickNoteText(""); setShowQuickNoteComposer(false); }}>Close</button>
-              </div>
-            ) : (
-              <>
-                <div className="form-group" style={{ marginTop: '0.75rem' }}>
-                  <label>Note</label>
-                  <textarea
-                    rows={5}
-                    placeholder="Type your note..."
-                    value={quickNoteText}
-                    onChange={(e) => setQuickNoteText(e.target.value)}
-                    style={{ width: "100%" }}
-                  />
-                </div>
-                <div className="modal-buttons">
-                  <button
-                    className="save-btn"
-                    onClick={async () => {
-                      const text = quickNoteText.trim();
-                      if (!text) { setShowQuickNoteComposer(false); setQuickNoteText(""); return; }
-                      try {
-                        if (quickNoteClientName) {
-                          const { getDocs, query, collection, where } = await import('firebase/firestore');
-                          const { db } = await import('../lib/firebase');
-                          const { updateClientById } = await import('../lib/clientsApi');
-                          const { logActivity } = await import('../lib/activityLogApi');
-                          const clientsCol = collection(db, 'clients');
-                          const q = query(clientsCol, where('name', '==', quickNoteClientName));
-                          const snap = await getDocs(q);
-                          if (!snap.empty) {
-                            const doc = snap.docs[0];
-                            const data = doc.data() || {};
-                            const prefix = quickNoteSource ? `${quickNoteSource} — ` : "";
-                            const noteText = `${prefix}${text}`;
-                            const notes = Array.isArray(data.notes)
-                              ? [...data.notes, { date: new Date().toISOString(), text: noteText }]
-                              : [{ date: new Date().toISOString(), text: noteText }];
-                            await updateClientById(doc.id, { notes });
-                            // Log the activity
-                            await logActivity({
-                              type: "note",
-                              entityType: "client",
-                              entityName: quickNoteClientName,
-                              details: noteText,
-                            });
-                          }
-                        }
-                      } catch (e) { console.error('Failed to add note from Sales Progression:', e); }
-                      setShowQuickNoteComposer(false);
-                      setQuickNoteText("");
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button className="cancel-btn" onClick={() => { setShowQuickNoteComposer(false); setQuickNoteText(""); }}>Cancel</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Quick note modal temporarily disabled while layout is refactored */}
+      </div>
     </div>
   );
 };

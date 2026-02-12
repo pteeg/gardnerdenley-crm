@@ -30,7 +30,7 @@ function ActivityButton({ onNoteClick, onLogOfferClick, onPhoneCallNoteClick }) 
         className="actions-button"
         onClick={() => setShowActionsMenu((v) => !v)}
       >
-        <span>+ Activity</span>
+        <span>+ Action</span>
       </button>
       {showActionsMenu && (
         <div className="actions-menu">

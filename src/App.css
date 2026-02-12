@@ -48,7 +48,7 @@ body::-webkit-scrollbar-thumb {
   border-radius: 50%;
   object-fit: contain;
   justify-self: start; /* sits in left column */
-  margin-left: 10px; /* move logo slightly to the right */
+  margin-left: 30px; /* move logo further to the right without affecting other header content */
 }
 
 .nav-area {

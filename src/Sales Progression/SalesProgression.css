@@ -2,6 +2,7 @@
 
 .sales-progression {
   padding: 0;
+  overflow-x: hidden; /* hide any page-level horizontal scrollbar */
 }
 
 .sales-progression-body {
@@ -26,6 +27,30 @@
   color: #555;
   margin: 0 0 12px 0;
   font-family: sans-serif;
+}
+
+.sp-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 12px;
+}
+
+.sp-view-toggle-btn {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.sp-view-toggle-btn.active {
+  background: #555555;
+  color: #ffffff;
+  border-color: #555555;
 }
 
 .sales-table-container {
@@ -263,4 +288,225 @@
 
 .sales-progression-unified-grid .activity-tile:hover {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.sp-overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem 1rem 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sp-overview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 4.8fr);
+  gap: 0.1rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+}
+
+.sp-overview-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-right: 0.1rem;
+}
+
+.sp-overview-client {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-overview-client-full {
+  font-size: 0.8rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-overview-property {
+  font-size: 0.85rem;
+  color: #4b5563;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-overview-meta {
+  display: grid;
+  /* Fixed column widths so tiles line up and long text (like property) can truncate */
+  grid-template-columns: 130px 260px 120px 150px 150px;
+  column-gap: 1.75rem; /* extra breathing room between Progress and Acquiring */
+  row-gap: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+.sp-overview-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.sp-overview-meta-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+}
+
+.sp-overview-meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sp-progress-bar {
+  position: relative;
+  flex: 0 0 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.sp-progress-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #16a34a;
+  transition: width 0.2s ease;
+}
+
+.sp-progress-text {
+  font-size: 0.8rem;
+  color: #166534;
+  font-weight: 500;
+}
+
+.sp-overview-ellipsis-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sp-overview-ellipsis-btn span {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: #555555;
+  display: block;
+}
+
+.sp-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.sp-detail-panel {
+  width: min(960px, 100% - 40px);
+  max-height: calc(100vh - 80px);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+  padding: 20px 24px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sp-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sp-detail-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sp-detail-subtitle {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.sp-detail-close-btn {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.9rem;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.sp-detail-close-btn:hover {
+  background: #e5e7eb;
+}
+
+.sp-detail-steps {
+  overflow-y: auto;
+  padding-top: 0.25rem;
+  padding-right: 4px;
+}
+
+.sp-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.35rem 0;
+}
+
+.sp-detail-label {
+  font-size: 0.9rem;
+  color: #374151;
+  flex: 0 0 220px;
+}
+
+.sp-detail-row input[type="text"],
+.sp-detail-row input[type="date"],
+.sp-detail-row .status-toggle {
+  font-size: 0.85rem;
+}
+
+.sp-detail-row .currency-wrapper {
+  width: 140px;
 }
