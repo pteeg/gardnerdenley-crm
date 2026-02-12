@@ -101,7 +101,7 @@ const WongaReport = ({ data, clients = [], properties = [] }) => {
     <div className="wonga-report">
       <div className="wonga-body">
         <Sidebar
-          title="Wonga Report"
+          title="Wonga"
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           items={[

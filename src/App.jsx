@@ -9,8 +9,8 @@ import PropertiesPage from "./Properties/PropertiesPage";
 import SalesProgression from "./Sales Progression/SalesProgression";
 import WongaReport from "./Wonga Report/WongaReport";
 import Overview from "./Overview/Overview";
-import OldHome from "./OldHome/OldHome";
 import Login from "./Login";
+import Sidebar from "./Sidebar";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { subscribeToProperties } from "./lib/propertiesApi";
 import { subscribeToProfessionals } from "./lib/professionalsApi";
@@ -20,6 +20,7 @@ import LogOfferModal from "./LogOfferModal";
 import LogNoteModal from "./LogNoteModal";
 import ActivityButton from "./ActivityButton";
 import { logActivity } from "./lib/activityLogApi";
+import EmailTemplatesPage from "./Contacts/EmailTemplatesPage";
 
 function AppContent({ logout }) {
   const [activeTab, setActiveTab] = useState("Overview");
@@ -30,6 +31,8 @@ function AppContent({ logout }) {
   const [isNarrowScreen, setIsNarrowScreen] = useState(false);
   const [showNavDropdown, setShowNavDropdown] = useState(false);
   const navDropdownRef = useRef(null);
+  const [homeSidebarCollapsed, setHomeSidebarCollapsed] = useState(false);
+  const [homeSubPage, setHomeSubPage] = useState("Overview");
 
   // Reposition highlight on tab change or resize
   useLayoutEffect(() => {
@@ -55,7 +58,9 @@ function AppContent({ logout }) {
   // Check screen width for responsive navigation
   useEffect(() => {
     const checkScreenWidth = () => {
-      setIsNarrowScreen(window.innerWidth < 1100);
+      // Treat slightly narrower widths as "wide" so the + Activity pill
+      // can stay centered between the nav and My Account on most laptops.
+      setIsNarrowScreen(window.innerWidth < 980);
     };
     
     checkScreenWidth();
@@ -361,12 +366,24 @@ function AppContent({ logout }) {
 
   useEffect(() => {
     if (!showProfileMenu) return;
+
     const handleEscape = (e) => {
-      if (e.key === 'Escape') setShowProfileMenu(false);
+      if (e.key === "Escape") setShowProfileMenu(false);
     };
-    document.addEventListener('keydown', handleEscape);
+
+    const handleClickOutside = (e) => {
+      // Close when clicking anywhere outside the My Account pill + popup
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showProfileMenu]);
 
@@ -521,35 +538,33 @@ function AppContent({ logout }) {
         <div className="profile-area" ref={profileRef}>
           <button
             type="button"
-            className="hamburger-button"
+            className={`hamburger-button ${showProfileMenu ? "hamburger-button--active" : ""}`}
             onClick={() => setShowProfileMenu((v) => !v)}
-            aria-label="Menu"
+            aria-label="My Account"
           >
+            <span className="hamburger-label">My Account</span>
             <FontAwesomeIcon 
-              icon={showProfileMenu ? faX : faBars} 
-              style={{ color: showProfileMenu ? 'white' : '#555555', width: '20px', height: '20px' }} 
+              icon={faBars} 
+              style={{ color: showProfileMenu ? '#ffffff' : '#555555', width: '18px', height: '18px' }} 
             />
           </button>
           {showProfileMenu && (
-            <>
-              <div className="menu-overlay" onClick={() => setShowProfileMenu(false)} />
-              <div className="hamburger-menu">
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setActiveTab("Old Home");
-                    setShowProfileMenu(false);
-                  }} 
-                  className="menu-item"
-                >
-                  <span>Old Home</span>
-                </button>
-                <button type="button" onClick={logout} className="menu-item">
-                  <span>Sign Out</span>
-                  <FontAwesomeIcon icon={faRightFromBracket} style={{ color: 'white', marginLeft: 'auto' }} />
-                </button>
-              </div>
-            </>
+            <div className="hamburger-menu">
+              <button 
+                type="button" 
+                className="menu-item" 
+                style={{ marginTop: 0 }}
+                onClick={() => {
+                  // TODO: wire up Settings screen when implemented
+                }}
+              >
+                <span>Settings</span>
+              </button>
+              <button type="button" onClick={logout} className="menu-item">
+                <span>Sign Out</span>
+                <FontAwesomeIcon icon={faRightFromBracket} style={{ color: 'white', marginLeft: 'auto' }} />
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -557,15 +572,92 @@ function AppContent({ logout }) {
       {/* ✅ Page Content */}
       <div style={{ padding: "0", marginTop: "-16px", width: "100%", overflowX: "hidden", marginRight: "0", paddingRight: "0" }}>
         {activeTab === "Overview" && (
-          <Overview
-            clients={clients}
-            properties={properties}
-            professionals={professionals}
-            salesProgressions={salesProgressions}
-            updateClientStatus={updateClientStatus}
-            createNewSalesProgression={createNewSalesProgression}
-            removeSalesProgressionRow={removeSalesProgressionRow}
-          />
+          <div className={`home-with-sidebar ${homeSubPage === "Email Templates" ? "home-with-sidebar--white" : ""}`}>
+            <Sidebar
+              title="Home"
+              collapsed={homeSidebarCollapsed}
+              onToggleCollapse={() => setHomeSidebarCollapsed((v) => !v)}
+              items={[
+                {
+                  key: "home-overview",
+                  label: "Overview",
+                  active: homeSubPage === "Overview",
+                  onClick: () => setHomeSubPage("Overview"),
+                },
+                {
+                  key: "home-active-searches",
+                  label: "Active Searches",
+                  active: homeSubPage === "Active Searches",
+                  onClick: () => setHomeSubPage("Active Searches"),
+                },
+                {
+                  key: "home-master-activity",
+                  label: "Master Activity Log",
+                  active: homeSubPage === "Master Activity Log",
+                  onClick: () => setHomeSubPage("Master Activity Log"),
+                },
+                {
+                  key: "home-email-templates",
+                  label: "Email Templates",
+                  active: homeSubPage === "Email Templates",
+                  onClick: () => setHomeSubPage("Email Templates"),
+                },
+              ]}
+            />
+            <div className="home-main">
+              {homeSubPage === "Overview" && (
+                <Overview
+                  clients={clients}
+                  properties={properties}
+                  professionals={professionals}
+                  salesProgressions={salesProgressions}
+                  updateClientStatus={updateClientStatus}
+                  createNewSalesProgression={createNewSalesProgression}
+                  removeSalesProgressionRow={removeSalesProgressionRow}
+                  hasHomeSidebar
+                  showTopTiles
+                  showActivityLog
+                />
+              )}
+
+              {homeSubPage === "Active Searches" && (
+                <Overview
+                  clients={clients}
+                  properties={properties}
+                  professionals={professionals}
+                  salesProgressions={salesProgressions}
+                  updateClientStatus={updateClientStatus}
+                  createNewSalesProgression={createNewSalesProgression}
+                  removeSalesProgressionRow={removeSalesProgressionRow}
+                  hasHomeSidebar
+                  showTopTiles
+                  showActivityLog={false}
+                />
+              )}
+
+              {homeSubPage === "Master Activity Log" && (
+                <Overview
+                  clients={clients}
+                  properties={properties}
+                  professionals={professionals}
+                  salesProgressions={salesProgressions}
+                  updateClientStatus={updateClientStatus}
+                  createNewSalesProgression={createNewSalesProgression}
+                  removeSalesProgressionRow={removeSalesProgressionRow}
+                  hasHomeSidebar
+                  showTopTiles={false}
+                  showActivityLog
+                />
+              )}
+
+              {homeSubPage === "Email Templates" && (
+                <EmailTemplatesPage
+                  clients={clients}
+                  professionals={professionals}
+                />
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === "Contacts" && (
@@ -660,13 +752,10 @@ function AppContent({ logout }) {
         />
         )}
 
-        {activeTab === "Revenue" && (
+        {activeTab === "Wonga Report" && (
           <WongaReport data={salesProgressions} properties={properties} clients={clients} />
         )}
 
-        {activeTab === "Old Home" && (
-          <OldHome />
-        )}
       </div>
 
       {/* Log Offer Modal */}

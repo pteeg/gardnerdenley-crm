@@ -17,7 +17,10 @@ function Overview({
   salesProgressions = [],
   updateClientStatus,
   createNewSalesProgression,
-  removeSalesProgressionRow
+  removeSalesProgressionRow,
+  hasHomeSidebar = false,
+  showTopTiles = true,
+  showActivityLog = true,
 }) {
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1043,9 +1046,10 @@ function Overview({
     : 'auto';
 
   return (
-    <div className="overview-page">
+    <div className={`overview-page ${hasHomeSidebar ? "overview-page--with-sidebar" : ""}`}>
       <div className="overview-inner">
         {/* Top row: Clients Searching and Properties Off Market */}
+        {showTopTiles && (
         <div className="overview-top-tiles">
           {/* Clients Searching */}
           <div className="overview-tile" style={{ padding: "1.5rem 0.75rem" }}>
@@ -1233,8 +1237,9 @@ function Overview({
             })()}
           </div>
         </div>
+        )}
 
-        <div className="overview-main-content">
+        <div className="overview-main-content" style={{ display: showActivityLog ? "block" : "none" }}>
           <div className="activity-log-container" style={{ height: activityLogCollapsed ? "auto" : "calc(100vh - 4rem)", maxHeight: activityLogCollapsed ? "auto" : "calc(100vh - 4rem)", overflow: activityLogCollapsed ? "visible" : "hidden" }}>
           <div className="activity-log-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", position: "relative", marginBottom: activityLogCollapsed ? "0" : "1.5rem" }}>
             <h2 className="activity-log-title" style={{ margin: 0, flex: 1 }}>
@@ -1814,7 +1819,7 @@ function Overview({
             <div style={{ height: '300px', width: '100%' }}>
               <ThisMonthRevenueChart salesProgressions={salesProgressions} />
             </div>
-          </div> */}
+          </div> */}          
 
           {/* Clients Under Offer Table */}
           {/* <div className="overview-tile">
@@ -1983,7 +1988,7 @@ function Overview({
                   })}
               </div>
             )}
-          </div> */}
+          </div> */}        
 
           {/* Sales Progression Table */}
           {/* <div 
@@ -2057,7 +2062,7 @@ function Overview({
                 </div>
               </>
             )}
-          </div> */}
+          </div> */}        
         </div>
         </div>
 
